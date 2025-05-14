@@ -1,11 +1,13 @@
 
 import { useState, useEffect } from "react";
-import { Activity, Edit, ArrowUp, ArrowDown } from "lucide-react";
+import { Activity, Edit, ArrowUp, ArrowDown, Settings } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Slider } from "@/components/ui/slider";
 import PageHeader from "@/components/PageHeader";
 import ActivityRing from "@/components/ActivityRing";
 import BottomNavigation from "@/components/BottomNavigation";
@@ -16,16 +18,22 @@ interface DailyActivity {
   distance: number;
   calories: number;
   duration: number; // in minutes
+  activityType?: string; // New property for tracking activity type
 }
 
 const ActivityPage = () => {
   const [isTracking, setIsTracking] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isGoalDialogOpen, setIsGoalDialogOpen] = useState(false);
+  const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
   const [newSteps, setNewSteps] = useState("");
   const [activities, setActivities] = useState<DailyActivity[]>([]);
-  const stepsGoal = 10000;
+  const [stepsGoal, setStepsGoal] = useState(10000);
+  const [newStepsGoal, setNewStepsGoal] = useState("10000");
+  const [selectedActivityType, setSelectedActivityType] = useState("walking");
   
   useEffect(() => {
+    // Load activities from localStorage
     const savedActivities = localStorage.getItem("activityData");
     if (savedActivities) {
       setActivities(JSON.parse(savedActivities));
@@ -41,6 +49,12 @@ const ActivityPage = () => {
       };
       setActivities([initialActivity]);
       localStorage.setItem("activityData", JSON.stringify([initialActivity]));
+    }
+    
+    // Load user's custom goal from localStorage
+    const savedGoal = localStorage.getItem("stepsGoal");
+    if (savedGoal) {
+      setStepsGoal(parseInt(savedGoal));
     }
   }, []);
   
@@ -63,10 +77,21 @@ const ActivityPage = () => {
     
     const steps = parseInt(newSteps);
     
-    // Calculate approximate values based on steps
-    const distance = +(steps * 0.0007).toFixed(1); // km
-    const calories = Math.round(steps * 0.04); // kcal
-    const duration = Math.round(steps * 0.01); // minutes
+    // Calculate approximate values based on steps and activity type
+    let distance = +(steps * 0.0007).toFixed(1); // km
+    let calories = Math.round(steps * 0.04); // kcal
+    let duration = Math.round(steps * 0.01); // minutes
+    
+    // Adjust calculations based on activity type
+    if (selectedActivityType === "running") {
+      distance = +(steps * 0.0009).toFixed(1);
+      calories = Math.round(steps * 0.06);
+      duration = Math.round(steps * 0.008);
+    } else if (selectedActivityType === "cycling") {
+      distance = +(steps * 0.003).toFixed(1);
+      calories = Math.round(steps * 0.05);
+      duration = Math.round(steps * 0.015);
+    }
     
     const today = new Date().toLocaleDateString('en-US', { weekday: 'short' });
     
@@ -75,7 +100,8 @@ const ActivityPage = () => {
       steps,
       distance,
       calories,
-      duration
+      duration,
+      activityType: selectedActivityType
     };
     
     const updatedActivities = [...activities, newActivity];
@@ -87,7 +113,28 @@ const ActivityPage = () => {
     
     toast({
       title: "Activity added",
-      description: `Added ${steps} steps to your activity log`,
+      description: `Added ${steps} steps from ${selectedActivityType} to your activity log`,
+    });
+  };
+  
+  const handleUpdateGoal = () => {
+    if (!newStepsGoal || isNaN(Number(newStepsGoal))) {
+      toast({
+        title: "Invalid goal",
+        description: "Please enter a valid number",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const goal = parseInt(newStepsGoal);
+    setStepsGoal(goal);
+    localStorage.setItem("stepsGoal", String(goal));
+    setIsGoalDialogOpen(false);
+    
+    toast({
+      title: "Goal updated",
+      description: `Your daily steps goal is now ${goal.toLocaleString()} steps`,
     });
   };
   
@@ -105,6 +152,13 @@ const ActivityPage = () => {
       return { day, steps, heightPercent, isToday };
     });
   };
+
+  const getRecentActivities = () => {
+    // Return the most recent 5 activities
+    return [...activities].reverse().slice(0, 5);
+  };
+
+  const activityTypes = ["walking", "running", "cycling", "hiking", "swimming", "gym"];
   
   return (
     <div className="pb-20 px-6 max-w-lg mx-auto">
@@ -125,6 +179,14 @@ const ActivityPage = () => {
               onClick={() => setIsAddDialogOpen(true)}
             >
               <Edit className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setIsGoalDialogOpen(true)}
+            >
+              <Settings className="h-4 w-4" />
             </Button>
           </div>
         </div>
@@ -155,22 +217,64 @@ const ActivityPage = () => {
           </div>
         </div>
       </Card>
-      
-      <Card className="p-5 mb-6">
-        <h3 className="font-medium mb-3">Start Workout</h3>
-        <div className="grid grid-cols-3 gap-3">
-          {["Walking", "Running", "Cycling", "Swimming", "Hiking", "Gym"].map((activity) => (
-            <Button 
-              key={activity}
-              variant="outline"
-              className="h-20 flex flex-col justify-center items-center border-2"
-            >
-              <Activity className="h-5 w-5 mb-1" />
-              <span className="text-xs">{activity}</span>
-            </Button>
-          ))}
-        </div>
-      </Card>
+
+      <Tabs defaultValue="workouts" className="mb-6">
+        <TabsList className="w-full mb-4">
+          <TabsTrigger value="workouts" className="flex-1">Start Workout</TabsTrigger>
+          <TabsTrigger value="history" className="flex-1">Recent Activity</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="workouts">
+          <Card className="p-5">
+            <h3 className="font-medium mb-3">Quick Start</h3>
+            <div className="grid grid-cols-3 gap-3">
+              {activityTypes.map((activity) => (
+                <Button 
+                  key={activity}
+                  variant="outline"
+                  className={`h-20 flex flex-col justify-center items-center border-2 ${
+                    isTracking && selectedActivityType === activity ? 'border-health-blue' : ''
+                  }`}
+                  onClick={() => {
+                    setSelectedActivityType(activity);
+                    setIsTracking(true);
+                  }}
+                >
+                  <Activity className="h-5 w-5 mb-1" />
+                  <span className="text-xs">{activity.charAt(0).toUpperCase() + activity.slice(1)}</span>
+                </Button>
+              ))}
+            </div>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="history">
+          <Card className="p-5">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="font-medium">Recent Activities</h3>
+              <Button 
+                variant="ghost" 
+                className="text-sm h-8 px-2"
+                onClick={() => setIsHistoryDialogOpen(true)}
+              >
+                View All
+              </Button>
+            </div>
+            {getRecentActivities().map((activity, index) => (
+              <div key={index} className="flex justify-between items-center py-2 border-b last:border-0">
+                <div>
+                  <p className="text-sm font-medium">{activity.date}</p>
+                  <p className="text-xs text-gray-500">{activity.activityType || 'walking'}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-bold">{activity.steps.toLocaleString()} steps</p>
+                  <p className="text-xs text-gray-500">{activity.distance} km</p>
+                </div>
+              </div>
+            ))}
+          </Card>
+        </TabsContent>
+      </Tabs>
       
       <Card className="p-5 mb-6">
         <h3 className="font-medium mb-3">Weekly Activity</h3>
@@ -201,17 +305,36 @@ const ActivityPage = () => {
           <DialogHeader>
             <DialogTitle>Add Steps</DialogTitle>
             <DialogDescription>
-              Enter your step count for today
+              Enter your step count and select activity type
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <Input
-              type="number"
-              placeholder="Enter steps"
-              value={newSteps}
-              onChange={(e) => setNewSteps(e.target.value)}
-              className="w-full"
-            />
+          <div className="py-4 space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-1 block">Steps</label>
+              <Input
+                type="number"
+                placeholder="Enter steps"
+                value={newSteps}
+                onChange={(e) => setNewSteps(e.target.value)}
+                className="w-full"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Activity Type</label>
+              <div className="grid grid-cols-3 gap-2">
+                {activityTypes.map((type) => (
+                  <Button
+                    key={type}
+                    type="button"
+                    variant={selectedActivityType === type ? "default" : "outline"}
+                    className="text-xs py-1"
+                    onClick={() => setSelectedActivityType(type)}
+                  >
+                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                  </Button>
+                ))}
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
@@ -219,6 +342,103 @@ const ActivityPage = () => {
             </Button>
             <Button className="bg-health-blue hover:bg-blue-600" onClick={handleAddActivity}>
               Add
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog for setting goals */}
+      <Dialog open={isGoalDialogOpen} onOpenChange={setIsGoalDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Set Daily Goal</DialogTitle>
+            <DialogDescription>
+              Update your daily step count goal
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-1 block">Daily Step Goal</label>
+              <Input
+                type="number"
+                placeholder="Enter goal"
+                value={newStepsGoal}
+                onChange={(e) => setNewStepsGoal(e.target.value)}
+                className="w-full mb-2"
+              />
+              <div className="pt-4">
+                <label className="text-sm font-medium mb-2 block">Quick Select</label>
+                <div className="flex flex-wrap gap-2">
+                  {[5000, 7500, 10000, 12500, 15000].map((goal) => (
+                    <Button
+                      key={goal}
+                      type="button"
+                      variant={newStepsGoal === goal.toString() ? "default" : "outline"}
+                      className="text-xs py-1"
+                      onClick={() => setNewStepsGoal(goal.toString())}
+                    >
+                      {goal.toLocaleString()}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsGoalDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button className="bg-health-blue hover:bg-blue-600" onClick={handleUpdateGoal}>
+              Update Goal
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Dialog for activity history */}
+      <Dialog open={isHistoryDialogOpen} onOpenChange={setIsHistoryDialogOpen}>
+        <DialogContent className="max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Activity History</DialogTitle>
+            <DialogDescription>
+              View your complete activity history
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {activities.length === 0 ? (
+              <p className="text-center text-gray-500">No activities recorded yet</p>
+            ) : (
+              activities.map((activity, index) => (
+                <div key={index} className="mb-4 p-3 border rounded-md">
+                  <div className="flex justify-between items-center mb-2">
+                    <p className="font-medium">{activity.date}</p>
+                    <p className="text-sm text-gray-500">{activity.activityType || 'walking'}</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <p className="text-gray-500">Steps</p>
+                      <p className="font-bold">{activity.steps.toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Distance</p>
+                      <p className="font-bold">{activity.distance} km</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Calories</p>
+                      <p className="font-bold">{activity.calories} kcal</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Duration</p>
+                      <p className="font-bold">{activity.duration} min</p>
+                    </div>
+                  </div>
+                </div>
+              )).reverse()
+            )}
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setIsHistoryDialogOpen(false)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>
