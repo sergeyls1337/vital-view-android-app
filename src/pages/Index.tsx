@@ -1,14 +1,24 @@
 
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Activity, Droplets, Moon, Scale } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import ActivityRing from "@/components/ActivityRing";
 import HealthMetricCard from "@/components/HealthMetricCard";
 import BottomNavigation from "@/components/BottomNavigation";
-import { useNavigate } from "react-router-dom";
+import LoginForm from "@/components/LoginForm";
+import { userService } from "@/services/userService";
 
 const Index = () => {
   const navigate = useNavigate();
+  const [user, setUser] = useState(userService.getCurrentUser());
+  
+  useEffect(() => {
+    const currentUser = userService.getCurrentUser();
+    setUser(currentUser);
+  }, []);
+  
   const currentDate = new Date().toLocaleDateString('en-US', { 
     weekday: 'long', 
     month: 'long', 
@@ -21,12 +31,24 @@ const Index = () => {
       <div className="p-6 health-gradient text-white rounded-b-3xl mb-6 shadow-lg">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold">Hello, User</h1>
+            <h1 className="text-2xl font-bold">Hello, {user ? user.name : "Guest"}</h1>
             <p className="text-white/90 text-sm">{currentDate}</p>
           </div>
-          <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-            <span className="text-lg font-bold">U</span>
-          </div>
+          {user ? (
+            <div 
+              className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center cursor-pointer"
+              onClick={() => navigate("/profile")}
+            >
+              <span className="text-lg font-bold">{user.name.charAt(0)}</span>
+            </div>
+          ) : (
+            <div 
+              className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center cursor-pointer"
+              onClick={() => navigate("/profile")}
+            >
+              <span className="text-lg font-bold">?</span>
+            </div>
+          )}
         </div>
         
         <div className="mt-6 flex justify-between items-center">
@@ -39,22 +61,34 @@ const Index = () => {
           />
           
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-white/20 rounded-xl p-3 flex flex-col items-center">
+            <div 
+              className="bg-white/20 rounded-xl p-3 flex flex-col items-center cursor-pointer"
+              onClick={() => navigate('/activity')}
+            >
               <Activity className="h-5 w-5 mb-1" />
               <span className="text-xs">Steps</span>
               <span className="text-lg font-semibold">7,384</span>
             </div>
-            <div className="bg-white/20 rounded-xl p-3 flex flex-col items-center">
+            <div 
+              className="bg-white/20 rounded-xl p-3 flex flex-col items-center cursor-pointer"
+              onClick={() => navigate('/water')}
+            >
               <Droplets className="h-5 w-5 mb-1" />
               <span className="text-xs">Water</span>
               <span className="text-lg font-semibold">1.2L</span>
             </div>
-            <div className="bg-white/20 rounded-xl p-3 flex flex-col items-center">
+            <div 
+              className="bg-white/20 rounded-xl p-3 flex flex-col items-center cursor-pointer"
+              onClick={() => navigate('/sleep')}
+            >
               <Moon className="h-5 w-5 mb-1" />
               <span className="text-xs">Sleep</span>
               <span className="text-lg font-semibold">7.5h</span>
             </div>
-            <div className="bg-white/20 rounded-xl p-3 flex flex-col items-center">
+            <div 
+              className="bg-white/20 rounded-xl p-3 flex flex-col items-center cursor-pointer"
+              onClick={() => navigate('/weight')}
+            >
               <Scale className="h-5 w-5 mb-1" />
               <span className="text-xs">Weight</span>
               <span className="text-lg font-semibold">75kg</span>
@@ -64,6 +98,10 @@ const Index = () => {
       </div>
       
       <div className="px-6">
+        {!user && (
+          <LoginForm />
+        )}
+        
         <h2 className="text-xl font-bold mb-4">Today's Activity</h2>
         
         <div className="grid grid-cols-2 gap-4 mb-6">

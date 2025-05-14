@@ -9,6 +9,7 @@ import ActivityPage from "./pages/ActivityPage";
 import WaterPage from "./pages/WaterPage";
 import SleepPage from "./pages/SleepPage";
 import WeightPage from "./pages/WeightPage";
+import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +26,7 @@ const App = () => (
           <Route path="/water" element={<WaterPage />} />
           <Route path="/sleep" element={<SleepPage />} />
           <Route path="/weight" element={<WeightPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
