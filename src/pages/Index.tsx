@@ -1,12 +1,148 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import { Activity, Droplets, Moon, Scale } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import ActivityRing from "@/components/ActivityRing";
+import HealthMetricCard from "@/components/HealthMetricCard";
+import BottomNavigation from "@/components/BottomNavigation";
+import { useNavigate } from "react-router-dom";
 
 const Index = () => {
+  const navigate = useNavigate();
+  const currentDate = new Date().toLocaleDateString('en-US', { 
+    weekday: 'long', 
+    month: 'long', 
+    day: 'numeric' 
+  });
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
+    <div className="pb-20 max-w-lg mx-auto">
+      {/* Header */}
+      <div className="p-6 health-gradient text-white rounded-b-3xl mb-6 shadow-lg">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold">Hello, User</h1>
+            <p className="text-white/90 text-sm">{currentDate}</p>
+          </div>
+          <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+            <span className="text-lg font-bold">U</span>
+          </div>
+        </div>
+        
+        <div className="mt-6 flex justify-between items-center">
+          <ActivityRing 
+            progress={68} 
+            size={120} 
+            color="#ffffff" 
+            label="Daily Goal" 
+            value="68%" 
+          />
+          
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-white/20 rounded-xl p-3 flex flex-col items-center">
+              <Activity className="h-5 w-5 mb-1" />
+              <span className="text-xs">Steps</span>
+              <span className="text-lg font-semibold">7,384</span>
+            </div>
+            <div className="bg-white/20 rounded-xl p-3 flex flex-col items-center">
+              <Droplets className="h-5 w-5 mb-1" />
+              <span className="text-xs">Water</span>
+              <span className="text-lg font-semibold">1.2L</span>
+            </div>
+            <div className="bg-white/20 rounded-xl p-3 flex flex-col items-center">
+              <Moon className="h-5 w-5 mb-1" />
+              <span className="text-xs">Sleep</span>
+              <span className="text-lg font-semibold">7.5h</span>
+            </div>
+            <div className="bg-white/20 rounded-xl p-3 flex flex-col items-center">
+              <Scale className="h-5 w-5 mb-1" />
+              <span className="text-xs">Weight</span>
+              <span className="text-lg font-semibold">75kg</span>
+            </div>
+          </div>
+        </div>
       </div>
+      
+      <div className="px-6">
+        <h2 className="text-xl font-bold mb-4">Today's Activity</h2>
+        
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <HealthMetricCard
+            title="Steps"
+            value="7,384"
+            icon={<Activity className="h-5 w-5 text-white" />}
+            color="bg-health-blue"
+            unit="steps"
+            progress={74}
+          />
+          <HealthMetricCard
+            title="Calories"
+            value="326"
+            icon={<Activity className="h-5 w-5 text-white" />}
+            color="bg-health-purple"
+            unit="kcal"
+            progress={43}
+          />
+          <HealthMetricCard
+            title="Water"
+            value="1.2"
+            icon={<Droplets className="h-5 w-5 text-white" />}
+            color="bg-health-teal"
+            unit="liters"
+            progress={60}
+          />
+          <HealthMetricCard
+            title="Sleep"
+            value="7.5"
+            icon={<Moon className="h-5 w-5 text-white" />}
+            color="bg-health-purple"
+            unit="hours"
+            progress={94}
+          />
+        </div>
+        
+        <Card className="p-5 mb-6">
+          <h3 className="font-medium mb-2">Weight Tracking</h3>
+          <div className="flex justify-between items-end">
+            <div>
+              <p className="text-sm text-gray-500">Current</p>
+              <p className="text-xl font-bold">75 kg</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Goal</p>
+              <p className="text-xl font-bold text-health-green">70 kg</p>
+            </div>
+            <Button 
+              className="bg-health-blue hover:bg-health-teal text-xs h-9"
+              onClick={() => navigate('/weight')}
+            >
+              Track Weight
+            </Button>
+          </div>
+        </Card>
+        
+        <Card className="p-5">
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="font-medium">Today's Tips</h3>
+          </div>
+          <ul className="space-y-2">
+            <li className="flex items-start gap-2">
+              <div className="min-w-5 min-h-5 rounded-full bg-health-green mt-1"></div>
+              <p className="text-sm">Try to drink 2 more glasses of water before dinner</p>
+            </li>
+            <li className="flex items-start gap-2">
+              <div className="min-w-5 min-h-5 rounded-full bg-health-blue mt-1"></div>
+              <p className="text-sm">You're 2,616 steps away from your daily goal</p>
+            </li>
+            <li className="flex items-start gap-2">
+              <div className="min-w-5 min-h-5 rounded-full bg-health-teal mt-1"></div>
+              <p className="text-sm">Try to get 8 hours of sleep tonight</p>
+            </li>
+          </ul>
+        </Card>
+      </div>
+      
+      <BottomNavigation />
     </div>
   );
 };

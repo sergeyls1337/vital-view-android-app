@@ -1,9 +1,14 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
+import ActivityPage from "./pages/ActivityPage";
+import WaterPage from "./pages/WaterPage";
+import SleepPage from "./pages/SleepPage";
+import WeightPage from "./pages/WeightPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -16,7 +21,10 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="/activity" element={<ActivityPage />} />
+          <Route path="/water" element={<WaterPage />} />
+          <Route path="/sleep" element={<SleepPage />} />
+          <Route path="/weight" element={<WeightPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
