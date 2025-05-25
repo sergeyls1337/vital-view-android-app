@@ -35,6 +35,8 @@ const ActivityPage = () => {
     stepsProgress,
     handleAddActivity,
     handleUpdateGoal,
+    handleIncreaseSteps,
+    handleDecreaseSteps,
     getWeeklyActivities,
     getRecentActivities
   } = useActivityData();
@@ -70,6 +72,8 @@ const ActivityPage = () => {
         stepsProgress={stepsProgress}
         onOpenAddDialog={() => setIsAddDialogOpen(true)}
         onOpenGoalDialog={() => setIsGoalDialogOpen(true)}
+        onIncreaseSteps={handleIncreaseSteps}
+        onDecreaseSteps={handleDecreaseSteps}
       />
 
       <Tabs defaultValue="workouts" className="mb-6">

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { DailyActivity, ActivityType } from "@/types/activity";
 import { toast } from "@/hooks/use-toast";
@@ -21,10 +20,10 @@ export const useActivityData = () => {
       const today = new Date().toLocaleDateString('en-US', { weekday: 'short' });
       const initialActivity = {
         date: today,
-        steps: 7384,
-        distance: 5.2,
-        calories: 326,
-        duration: 47
+        steps: 0,
+        distance: 0,
+        calories: 0,
+        duration: 0
       };
       setActivities([initialActivity]);
       localStorage.setItem("activityData", JSON.stringify([initialActivity]));
@@ -43,6 +42,46 @@ export const useActivityData = () => {
   
   const currentActivity = getCurrentActivity();
   const stepsProgress = Math.min(100, Math.round((currentActivity.steps / stepsGoal) * 100));
+  
+  const updateCurrentActivity = (updatedSteps: number) => {
+    const today = new Date().toLocaleDateString('en-US', { weekday: 'short' });
+    const distance = +(updatedSteps * 0.0007).toFixed(1);
+    const calories = Math.round(updatedSteps * 0.04);
+    const duration = Math.round(updatedSteps * 0.01);
+    
+    const updatedActivity = {
+      date: today,
+      steps: updatedSteps,
+      distance,
+      calories,
+      duration,
+    };
+    
+    const updatedActivities = activities.length > 0 
+      ? [...activities.slice(0, -1), updatedActivity]
+      : [updatedActivity];
+    
+    setActivities(updatedActivities);
+    localStorage.setItem("activityData", JSON.stringify(updatedActivities));
+  };
+
+  const handleIncreaseSteps = () => {
+    const newStepsCount = Math.max(0, currentActivity.steps + 100);
+    updateCurrentActivity(newStepsCount);
+    toast({
+      title: "Steps increased",
+      description: `Added 100 steps. Total: ${newStepsCount.toLocaleString()}`,
+    });
+  };
+
+  const handleDecreaseSteps = () => {
+    const newStepsCount = Math.max(0, currentActivity.steps - 100);
+    updateCurrentActivity(newStepsCount);
+    toast({
+      title: "Steps decreased",
+      description: `Removed 100 steps. Total: ${newStepsCount.toLocaleString()}`,
+    });
+  };
   
   const handleAddActivity = () => {
     if (!newSteps || isNaN(Number(newSteps))) {
@@ -154,6 +193,8 @@ export const useActivityData = () => {
     stepsProgress,
     handleAddActivity,
     handleUpdateGoal,
+    handleIncreaseSteps,
+    handleDecreaseSteps,
     getWeeklyActivities,
     getRecentActivities
   };

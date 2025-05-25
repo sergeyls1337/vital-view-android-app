@@ -1,5 +1,5 @@
 
-import { Activity } from "lucide-react";
+import { Activity, Plus, Minus } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Edit, Settings } from "lucide-react";
@@ -12,6 +12,8 @@ interface ActivityStatsCardProps {
   stepsProgress: number;
   onOpenAddDialog: () => void;
   onOpenGoalDialog: () => void;
+  onIncreaseSteps: () => void;
+  onDecreaseSteps: () => void;
 }
 
 const ActivityStatsCard = ({ 
@@ -19,7 +21,9 @@ const ActivityStatsCard = ({
   stepsGoal, 
   stepsProgress,
   onOpenAddDialog,
-  onOpenGoalDialog
+  onOpenGoalDialog,
+  onIncreaseSteps,
+  onDecreaseSteps
 }: ActivityStatsCardProps) => {
   return (
     <Card className="p-5 mb-6">
@@ -53,22 +57,45 @@ const ActivityStatsCard = ({
           strokeWidth={12}
           color="#3b82f6"
           label="Steps"
-          value={currentActivity.steps.toLocaleString()}
+          value={currentActivity.steps?.toLocaleString() || '0'}
         />
+      </div>
+
+      <div className="flex items-center justify-center gap-4 mb-6">
+        <Button 
+          variant="outline" 
+          size="icon"
+          className="h-10 w-10"
+          onClick={onDecreaseSteps}
+        >
+          <Minus className="h-4 w-4" />
+        </Button>
+        <div className="text-center">
+          <p className="text-2xl font-bold">{currentActivity.steps?.toLocaleString() || '0'}</p>
+          <p className="text-sm text-gray-500">steps today</p>
+        </div>
+        <Button 
+          variant="outline" 
+          size="icon"
+          className="h-10 w-10"
+          onClick={onIncreaseSteps}
+        >
+          <Plus className="h-4 w-4" />
+        </Button>
       </div>
       
       <div className="grid grid-cols-3 gap-4 mb-4">
         <div className="text-center">
           <p className="text-sm text-gray-500">Distance</p>
-          <p className="text-lg font-bold">{currentActivity.distance} km</p>
+          <p className="text-lg font-bold">{currentActivity.distance || 0} km</p>
         </div>
         <div className="text-center">
           <p className="text-sm text-gray-500">Calories</p>
-          <p className="text-lg font-bold">{currentActivity.calories} kcal</p>
+          <p className="text-lg font-bold">{currentActivity.calories || 0} kcal</p>
         </div>
         <div className="text-center">
           <p className="text-sm text-gray-500">Time</p>
-          <p className="text-lg font-bold">{currentActivity.duration} min</p>
+          <p className="text-lg font-bold">{currentActivity.duration || 0} min</p>
         </div>
       </div>
     </Card>

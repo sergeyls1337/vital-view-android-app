@@ -1,6 +1,5 @@
-
 import { Button } from "@/components/ui/button";
-import { Activity, Run, Bike, Mountain, Waves, Dumbbell } from "lucide-react";
+import { Activity, Bike, Mountain, Waves, Dumbbell } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ActivityType } from "@/types/activity";
 
@@ -16,7 +15,7 @@ const getActivityIcon = (activityType: ActivityType) => {
     case "walking":
       return <Activity className="h-6 w-6 mb-2" />;
     case "running":
-      return <Run className="h-6 w-6 mb-2" />;
+      return <Activity className="h-6 w-6 mb-2" />;
     case "cycling":
       return <Bike className="h-6 w-6 mb-2" />;
     case "hiking":
