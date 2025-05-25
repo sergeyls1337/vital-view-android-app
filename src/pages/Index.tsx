@@ -7,21 +7,23 @@ import { Button } from "@/components/ui/button";
 import ActivityRing from "@/components/ActivityRing";
 import HealthMetricCard from "@/components/HealthMetricCard";
 import BottomNavigation from "@/components/BottomNavigation";
-import LoginForm from "@/components/LoginForm";
+import { useAuth } from "@/contexts/AuthContext";
 import { userService } from "@/services/userService";
 import { useWaterData } from "@/hooks/useWaterData";
 import { useActivityData } from "@/hooks/useActivityData";
 
 const Index = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState(userService.getCurrentUser());
+  const { user } = useAuth();
+  const [userProfile, setUserProfile] = useState(null);
   const { currentIntake, dailyGoal } = useWaterData();
   const { currentActivity, stepsProgress } = useActivityData();
   
   useEffect(() => {
-    const currentUser = userService.getCurrentUser();
-    setUser(currentUser);
-  }, []);
+    if (user) {
+      userService.getCurrentUser().then(setUserProfile);
+    }
+  }, [user]);
   
   const currentDate = new Date().toLocaleDateString('en-US', { 
     weekday: 'long', 
@@ -38,24 +40,17 @@ const Index = () => {
       <div className="p-6 health-gradient text-white rounded-b-3xl mb-6 shadow-lg">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold">Hello, {user ? user.name : "Guest"}</h1>
+            <h1 className="text-2xl font-bold">Hello, {userProfile?.name || user?.email?.split('@')[0] || "User"}</h1>
             <p className="text-white/90 text-sm">{currentDate}</p>
           </div>
-          {user ? (
-            <div 
-              className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center cursor-pointer"
-              onClick={() => navigate("/profile")}
-            >
-              <span className="text-lg font-bold">{user.name.charAt(0)}</span>
-            </div>
-          ) : (
-            <div 
-              className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center cursor-pointer"
-              onClick={() => navigate("/profile")}
-            >
-              <span className="text-lg font-bold">?</span>
-            </div>
-          )}
+          <div 
+            className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center cursor-pointer"
+            onClick={() => navigate("/profile")}
+          >
+            <span className="text-lg font-bold">
+              {(userProfile?.name || user?.email || "U").charAt(0).toUpperCase()}
+            </span>
+          </div>
         </div>
         
         <div className="mt-6 flex justify-between items-center">
@@ -105,10 +100,6 @@ const Index = () => {
       </div>
       
       <div className="px-6">
-        {!user && (
-          <LoginForm />
-        )}
-        
         <h2 className="text-xl font-bold mb-4">Today's Activity</h2>
         
         <div className="grid grid-cols-2 gap-4 mb-6">

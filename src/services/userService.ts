@@ -1,4 +1,6 @@
 
+import { supabase } from '@/integrations/supabase/client';
+
 interface User {
   id: string;
   name: string;
@@ -14,71 +16,85 @@ interface User {
   goalWater?: number;
 }
 
-// Mock users for demonstration
-const mockUsers: User[] = [
-  {
-    id: "1",
-    name: "Demo User",
-    email: "demo@example.com",
-    height: 175,
-    weight: 75,
-    age: 30,
-    gender: "Not specified",
-    goalWeight: 70,
-    goalSleep: 8,
-    goalSteps: 10000,
-    goalWater: 2.5,
-  }
-];
-
-// In a real app, this would connect to a backend API
 export const userService = {
   currentUser: null as User | null,
 
-  login(email: string, password: string): Promise<User> {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const user = mockUsers.find(u => u.email === email);
-        if (user) {
-          localStorage.setItem('currentUser', JSON.stringify(user));
-          this.currentUser = user;
-          resolve(user);
-        } else {
-          reject(new Error("Invalid credentials"));
-        }
-      }, 500);
+  async login(email: string, password: string): Promise<User> {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
     });
+    
+    if (error) throw error;
+    
+    const user = await this.getCurrentUser();
+    if (!user) throw new Error("Failed to get user data");
+    
+    return user;
   },
 
-  logout(): void {
-    localStorage.removeItem('currentUser');
+  async logout(): Promise<void> {
+    await supabase.auth.signOut();
     this.currentUser = null;
   },
 
-  getCurrentUser(): User | null {
-    if (this.currentUser) return this.currentUser;
-    
-    const storedUser = localStorage.getItem('currentUser');
-    if (storedUser) {
-      this.currentUser = JSON.parse(storedUser);
+  async getCurrentUser(): Promise<User | null> {
+    try {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      
+      if (!authUser) {
+        this.currentUser = null;
+        return null;
+      }
+
+      // Get profile data from the profiles table
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', authUser.id)
+        .single();
+
+      if (profile) {
+        this.currentUser = {
+          id: profile.id,
+          name: profile.full_name || profile.username,
+          email: authUser.email || '',
+          height: 175,
+          weight: 75,
+          age: 30,
+          gender: "Not specified",
+          goalWeight: 70,
+          goalSleep: 8,
+          goalSteps: 10000,
+          goalWater: 2.5,
+        };
+      }
+
       return this.currentUser;
+    } catch (error) {
+      console.error('Error getting current user:', error);
+      return null;
     }
-    
-    return null;
   },
 
-  updateProfile(updates: Partial<User>): Promise<User> {
-    return new Promise((resolve) => {
-      const currentUser = this.getCurrentUser();
-      if (!currentUser) throw new Error("No user logged in");
-      
-      const updatedUser = { ...currentUser, ...updates };
-      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-      this.currentUser = updatedUser;
-      
-      setTimeout(() => {
-        resolve(updatedUser);
-      }, 500);
-    });
+  async updateProfile(updates: Partial<User>): Promise<User> {
+    const currentUser = await this.getCurrentUser();
+    if (!currentUser) throw new Error("No user logged in");
+    
+    // Update profile in Supabase
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        full_name: updates.name,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', currentUser.id);
+
+    if (error) throw error;
+
+    const updatedUser = { ...currentUser, ...updates };
+    this.currentUser = updatedUser;
+    
+    return updatedUser;
   }
 };
