@@ -9,10 +9,12 @@ import HealthMetricCard from "@/components/HealthMetricCard";
 import BottomNavigation from "@/components/BottomNavigation";
 import LoginForm from "@/components/LoginForm";
 import { userService } from "@/services/userService";
+import { useWaterData } from "@/hooks/useWaterData";
 
 const Index = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(userService.getCurrentUser());
+  const { currentIntake, dailyGoal } = useWaterData();
   
   useEffect(() => {
     const currentUser = userService.getCurrentUser();
@@ -24,6 +26,9 @@ const Index = () => {
     month: 'long', 
     day: 'numeric' 
   });
+
+  const waterProgress = Math.min(100, Math.round((currentIntake / dailyGoal) * 100));
+  const waterInLiters = (currentIntake / 1000).toFixed(1);
 
   return (
     <div className="pb-20 max-w-lg mx-auto">
@@ -75,7 +80,7 @@ const Index = () => {
             >
               <Droplets className="h-5 w-5 mb-1" />
               <span className="text-xs">Water</span>
-              <span className="text-lg font-semibold">1.2L</span>
+              <span className="text-lg font-semibold">{waterInLiters}L</span>
             </div>
             <div 
               className="bg-white/20 rounded-xl p-3 flex flex-col items-center cursor-pointer"
@@ -123,11 +128,11 @@ const Index = () => {
           />
           <HealthMetricCard
             title="Water"
-            value="1.2"
+            value={waterInLiters}
             icon={<Droplets className="h-5 w-5 text-white" />}
             color="bg-health-teal"
             unit="liters"
-            progress={60}
+            progress={waterProgress}
           />
           <HealthMetricCard
             title="Sleep"

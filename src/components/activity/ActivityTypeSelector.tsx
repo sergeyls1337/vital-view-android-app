@@ -1,5 +1,5 @@
 
-import { Button } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ActivityType } from "@/types/activity";
