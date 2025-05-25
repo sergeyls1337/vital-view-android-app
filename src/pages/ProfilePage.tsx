@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { userService } from "@/services/userService";
@@ -9,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import PageHeader from "@/components/PageHeader";
 import BottomNavigation from "@/components/BottomNavigation";
-import { User, Settings, LogOut } from "lucide-react";
+import { User, Settings, LogOut, RotateCcw } from "lucide-react";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -67,6 +66,18 @@ const ProfilePage = () => {
     } catch (error) {
       toast.error("Failed to update profile");
     }
+  };
+
+  const handleResetStatistics = () => {
+    // Clear all stored data
+    localStorage.removeItem("activityData");
+    localStorage.removeItem("waterData");
+    localStorage.removeItem("stepsGoal");
+    
+    toast.success("All statistics have been reset!");
+    
+    // Refresh the page to reflect changes
+    window.location.reload();
   };
 
   const handleLogout = () => {
@@ -259,7 +270,7 @@ const ProfilePage = () => {
               </div>
             </div>
             
-            <div className="flex space-x-4">
+            <div className="flex space-x-4 mb-4">
               <Button 
                 className="flex-1 bg-health-purple hover:bg-purple-600"
                 onClick={() => setIsEditing(true)}
@@ -276,6 +287,14 @@ const ProfilePage = () => {
                 Sign Out
               </Button>
             </div>
+            
+            <Button 
+              className="w-full bg-red-500 hover:bg-red-600 text-white"
+              onClick={handleResetStatistics}
+            >
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Reset All Statistics
+            </Button>
           </div>
         )}
       </Card>

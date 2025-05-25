@@ -10,11 +10,13 @@ import BottomNavigation from "@/components/BottomNavigation";
 import LoginForm from "@/components/LoginForm";
 import { userService } from "@/services/userService";
 import { useWaterData } from "@/hooks/useWaterData";
+import { useActivityData } from "@/hooks/useActivityData";
 
 const Index = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(userService.getCurrentUser());
   const { currentIntake, dailyGoal } = useWaterData();
+  const { currentActivity, stepsProgress } = useActivityData();
   
   useEffect(() => {
     const currentUser = userService.getCurrentUser();
@@ -58,11 +60,11 @@ const Index = () => {
         
         <div className="mt-6 flex justify-between items-center">
           <ActivityRing 
-            progress={68} 
+            progress={stepsProgress} 
             size={120} 
             color="#ffffff" 
             label="Daily Goal" 
-            value="68%" 
+            value={`${stepsProgress}%`} 
           />
           
           <div className="grid grid-cols-2 gap-3">
@@ -72,7 +74,7 @@ const Index = () => {
             >
               <Activity className="h-5 w-5 mb-1" />
               <span className="text-xs">Steps</span>
-              <span className="text-lg font-semibold">7,384</span>
+              <span className="text-lg font-semibold">{currentActivity.steps?.toLocaleString() || '0'}</span>
             </div>
             <div 
               className="bg-white/20 rounded-xl p-3 flex flex-col items-center cursor-pointer"
@@ -112,15 +114,15 @@ const Index = () => {
         <div className="grid grid-cols-2 gap-4 mb-6">
           <HealthMetricCard
             title="Steps"
-            value="7,384"
+            value={currentActivity.steps?.toLocaleString() || "0"}
             icon={<Activity className="h-5 w-5 text-white" />}
             color="bg-health-blue"
             unit="steps"
-            progress={74}
+            progress={stepsProgress}
           />
           <HealthMetricCard
             title="Calories"
-            value="326"
+            value={currentActivity.calories?.toString() || "0"}
             icon={<Activity className="h-5 w-5 text-white" />}
             color="bg-health-purple"
             unit="kcal"
@@ -175,7 +177,7 @@ const Index = () => {
             </li>
             <li className="flex items-start gap-2">
               <div className="min-w-5 min-h-5 rounded-full bg-health-blue mt-1"></div>
-              <p className="text-sm">You're 2,616 steps away from your daily goal</p>
+              <p className="text-sm">You're {Math.max(0, 10000 - (currentActivity.steps || 0)).toLocaleString()} steps away from your daily goal</p>
             </li>
             <li className="flex items-start gap-2">
               <div className="min-w-5 min-h-5 rounded-full bg-health-teal mt-1"></div>
