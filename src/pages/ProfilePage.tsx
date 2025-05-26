@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { userService } from "@/services/userService";
@@ -12,37 +13,46 @@ import { User, Settings, LogOut, RotateCcw } from "lucide-react";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState(userService.getCurrentUser());
+  const [user, setUser] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
   
-  const [name, setName] = useState(user?.name || "");
-  const [email, setEmail] = useState(user?.email || "");
-  const [height, setHeight] = useState(user?.height?.toString() || "");
-  const [weight, setWeight] = useState(user?.weight?.toString() || "");
-  const [age, setAge] = useState(user?.age?.toString() || "");
-  const [gender, setGender] = useState(user?.gender || "");
-  const [goalWeight, setGoalWeight] = useState(user?.goalWeight?.toString() || "");
-  const [goalSleep, setGoalSleep] = useState(user?.goalSleep?.toString() || "");
-  const [goalSteps, setGoalSteps] = useState(user?.goalSteps?.toString() || "");
-  const [goalWater, setGoalWater] = useState(user?.goalWater?.toString() || "");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [height, setHeight] = useState("");
+  const [weight, setWeight] = useState("");
+  const [age, setAge] = useState("");
+  const [gender, setGender] = useState("");
+  const [goalWeight, setGoalWeight] = useState("");
+  const [goalSleep, setGoalSleep] = useState("");
+  const [goalSteps, setGoalSteps] = useState("");
+  const [goalWater, setGoalWater] = useState("");
 
   useEffect(() => {
-    const currentUser = userService.getCurrentUser();
-    if (!currentUser) {
-      navigate("/");
-    } else {
-      setUser(currentUser);
-      setName(currentUser.name || "");
-      setEmail(currentUser.email || "");
-      setHeight(currentUser.height?.toString() || "");
-      setWeight(currentUser.weight?.toString() || "");
-      setAge(currentUser.age?.toString() || "");
-      setGender(currentUser.gender || "");
-      setGoalWeight(currentUser.goalWeight?.toString() || "");
-      setGoalSleep(currentUser.goalSleep?.toString() || "");
-      setGoalSteps(currentUser.goalSteps?.toString() || "");
-      setGoalWater(currentUser.goalWater?.toString() || "");
-    }
+    const loadUserData = async () => {
+      try {
+        const currentUser = await userService.getCurrentUser();
+        if (!currentUser) {
+          navigate("/auth");
+        } else {
+          setUser(currentUser);
+          setName(currentUser.name || "");
+          setEmail(currentUser.email || "");
+          setHeight(currentUser.height?.toString() || "");
+          setWeight(currentUser.weight?.toString() || "");
+          setAge(currentUser.age?.toString() || "");
+          setGender(currentUser.gender || "");
+          setGoalWeight(currentUser.goalWeight?.toString() || "");
+          setGoalSleep(currentUser.goalSleep?.toString() || "");
+          setGoalSteps(currentUser.goalSteps?.toString() || "");
+          setGoalWater(currentUser.goalWater?.toString() || "");
+        }
+      } catch (error) {
+        console.error("Error loading user data:", error);
+        navigate("/auth");
+      }
+    };
+
+    loadUserData();
   }, [navigate]);
 
   const handleSaveProfile = async () => {
@@ -80,13 +90,22 @@ const ProfilePage = () => {
     window.location.reload();
   };
 
-  const handleLogout = () => {
-    userService.logout();
-    navigate("/");
+  const handleLogout = async () => {
+    try {
+      await userService.logout();
+      navigate("/auth");
+    } catch (error) {
+      console.error("Logout error:", error);
+      navigate("/auth");
+    }
   };
 
   if (!user) {
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-health-purple"></div>
+      </div>
+    );
   }
 
   return (
