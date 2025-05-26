@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
+import EmailConfirmation from "./components/EmailConfirmation";
 import ActivityPage from "./pages/ActivityPage";
 import WaterPage from "./pages/WaterPage";
 import SleepPage from "./pages/SleepPage";
@@ -26,6 +27,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<AuthPage />} />
+            <Route path="/confirm" element={<EmailConfirmation />} />
             <Route path="/" element={
               <ProtectedRoute>
                 <Index />
