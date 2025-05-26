@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { userService } from "@/services/userService";
@@ -10,10 +9,13 @@ import { toast } from "sonner";
 import PageHeader from "@/components/PageHeader";
 import BottomNavigation from "@/components/BottomNavigation";
 import { User, Settings, LogOut, RotateCcw } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { dataService } from "@/services/dataService";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState<any>(null);
+  const { user } = useAuth();
+  const [profileUser, setProfileUser] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
   
   const [name, setName] = useState("");
@@ -34,7 +36,7 @@ const ProfilePage = () => {
         if (!currentUser) {
           navigate("/auth");
         } else {
-          setUser(currentUser);
+          setProfileUser(currentUser);
           setName(currentUser.name || "");
           setEmail(currentUser.email || "");
           setHeight(currentUser.height?.toString() || "");
@@ -78,16 +80,26 @@ const ProfilePage = () => {
     }
   };
 
-  const handleResetStatistics = () => {
-    // Clear all stored data
-    localStorage.removeItem("activityData");
-    localStorage.removeItem("waterData");
-    localStorage.removeItem("stepsGoal");
+  const handleResetStatistics = async () => {
+    if (!user) return;
     
-    toast.success("All statistics have been reset!");
-    
-    // Refresh the page to reflect changes
-    window.location.reload();
+    try {
+      // Clear user-specific data from database
+      await dataService.clearUserData(user.id);
+      
+      // Also clear any remaining localStorage data (for migration)
+      localStorage.removeItem("activityData");
+      localStorage.removeItem("waterData");
+      localStorage.removeItem("stepsGoal");
+      
+      toast.success("All statistics have been reset!");
+      
+      // Refresh the page to reflect changes
+      window.location.reload();
+    } catch (error) {
+      console.error('Error resetting statistics:', error);
+      toast.error("Failed to reset statistics");
+    }
   };
 
   const handleLogout = async () => {
@@ -100,7 +112,7 @@ const ProfilePage = () => {
     }
   };
 
-  if (!user) {
+  if (!profileUser) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-health-purple"></div>
@@ -121,8 +133,8 @@ const ProfilePage = () => {
             <User className="h-8 w-8 text-health-purple" />
           </div>
           <div>
-            <h2 className="text-xl font-bold">{user.name}</h2>
-            <p className="text-gray-500">{user.email}</p>
+            <h2 className="text-xl font-bold">{profileUser.name}</h2>
+            <p className="text-gray-500">{profileUser.email}</p>
           </div>
         </div>
 
@@ -253,19 +265,19 @@ const ProfilePage = () => {
             <div className="grid grid-cols-2 gap-y-4 mb-6">
               <div>
                 <p className="text-sm text-gray-500">Height</p>
-                <p className="font-medium">{user.height ? `${user.height} cm` : "Not set"}</p>
+                <p className="font-medium">{profileUser.height ? `${profileUser.height} cm` : "Not set"}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Weight</p>
-                <p className="font-medium">{user.weight ? `${user.weight} kg` : "Not set"}</p>
+                <p className="font-medium">{profileUser.weight ? `${profileUser.weight} kg` : "Not set"}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Age</p>
-                <p className="font-medium">{user.age || "Not set"}</p>
+                <p className="font-medium">{profileUser.age || "Not set"}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Gender</p>
-                <p className="font-medium">{user.gender || "Not set"}</p>
+                <p className="font-medium">{profileUser.gender || "Not set"}</p>
               </div>
             </div>
             
@@ -273,19 +285,19 @@ const ProfilePage = () => {
             <div className="grid grid-cols-2 gap-y-4 mb-6">
               <div>
                 <p className="text-sm text-gray-500">Target Weight</p>
-                <p className="font-medium">{user.goalWeight ? `${user.goalWeight} kg` : "Not set"}</p>
+                <p className="font-medium">{profileUser.goalWeight ? `${profileUser.goalWeight} kg` : "Not set"}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Target Sleep</p>
-                <p className="font-medium">{user.goalSleep ? `${user.goalSleep} hours` : "Not set"}</p>
+                <p className="font-medium">{profileUser.goalSleep ? `${profileUser.goalSleep} hours` : "Not set"}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Daily Steps Target</p>
-                <p className="font-medium">{user.goalSteps ? `${user.goalSteps.toLocaleString()} steps` : "Not set"}</p>
+                <p className="font-medium">{profileUser.goalSteps ? `${profileUser.goalSteps.toLocaleString()} steps` : "Not set"}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Daily Water Target</p>
-                <p className="font-medium">{user.goalWater ? `${user.goalWater} liters` : "Not set"}</p>
+                <p className="font-medium">{profileUser.goalWater ? `${profileUser.goalWater} liters` : "Not set"}</p>
               </div>
             </div>
             

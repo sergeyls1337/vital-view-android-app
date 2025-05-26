@@ -1,5 +1,7 @@
 
 import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { dataService } from "@/services/dataService";
 import { toast } from "@/hooks/use-toast";
 
 interface WaterEntry {
@@ -16,6 +18,7 @@ interface WaterData {
 }
 
 export const useWaterData = () => {
+  const { user } = useAuth();
   const [waterData, setWaterData] = useState<WaterData>({
     currentIntake: 0,
     dailyGoal: 2000,
@@ -24,41 +27,56 @@ export const useWaterData = () => {
   });
 
   useEffect(() => {
-    // Load water data from localStorage
-    const savedData = localStorage.getItem("waterData");
-    if (savedData) {
-      const parsed = JSON.parse(savedData);
-      setWaterData(parsed);
-    } else {
-      // Initialize with some sample data
-      const initialData = {
-        currentIntake: 1200,
-        dailyGoal: 2000,
-        entries: [
-          { time: "8:00 AM", amount: 250, date: new Date().toDateString() },
-          { time: "10:30 AM", amount: 300, date: new Date().toDateString() },
-          { time: "12:45 PM", amount: 350, date: new Date().toDateString() },
-          { time: "3:15 PM", amount: 300, date: new Date().toDateString() },
-        ],
-        weeklyData: generateWeeklyData()
-      };
-      setWaterData(initialData);
-      localStorage.setItem("waterData", JSON.stringify(initialData));
+    if (!user) return;
+
+    const loadWaterData = async () => {
+      try {
+        const userData = await dataService.getUserData(user.id);
+        if (userData.waterData) {
+          setWaterData(userData.waterData);
+        } else {
+          // Initialize with default data for new users
+          const initialData = {
+            currentIntake: 0,
+            dailyGoal: 2000,
+            entries: [],
+            weeklyData: generateWeeklyData()
+          };
+          setWaterData(initialData);
+          await saveWaterData(initialData);
+        }
+      } catch (error) {
+        console.error('Error loading water data:', error);
+      }
+    };
+
+    loadWaterData();
+  }, [user]);
+
+  const saveWaterData = async (data: WaterData) => {
+    if (!user) return;
+    
+    try {
+      const userData = await dataService.getUserData(user.id);
+      userData.waterData = data;
+      await dataService.saveUserData(user.id, userData);
+    } catch (error) {
+      console.error('Error saving water data:', error);
     }
-  }, []);
+  };
 
   const generateWeeklyData = () => {
     const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
     const today = new Date().getDay();
-    const todayIndex = today === 0 ? 6 : today - 1; // Convert Sunday (0) to Saturday (6)
+    const todayIndex = today === 0 ? 6 : today - 1;
     
     return days.map((day, index) => ({
       day,
-      amount: index <= todayIndex ? Math.floor(Math.random() * 1500) + 500 : 0
+      amount: index <= todayIndex ? Math.floor(Math.random() * 1000) + 200 : 0
     }));
   };
 
-  const addWaterIntake = (amount: number) => {
+  const addWaterIntake = async (amount: number) => {
     const newIntake = Math.max(0, waterData.currentIntake + amount);
     const currentTime = new Date().toLocaleTimeString('en-US', { 
       hour: 'numeric', 
@@ -69,7 +87,6 @@ export const useWaterData = () => {
     let newEntries = [...waterData.entries];
     
     if (amount > 0) {
-      // Add new entry
       const newEntry = {
         time: currentTime,
         amount: amount,
@@ -82,7 +99,6 @@ export const useWaterData = () => {
         description: `Added ${amount}ml to your daily intake`,
       });
     } else if (amount < 0 && newEntries.length > 0) {
-      // Remove last entry when subtracting
       const removedEntry = newEntries.pop();
       if (removedEntry) {
         toast({
@@ -92,7 +108,6 @@ export const useWaterData = () => {
       }
     }
 
-    // Update weekly data for today
     const today = new Date().getDay();
     const todayIndex = today === 0 ? 6 : today - 1;
     const newWeeklyData = [...waterData.weeklyData];
@@ -108,7 +123,7 @@ export const useWaterData = () => {
     };
 
     setWaterData(updatedData);
-    localStorage.setItem("waterData", JSON.stringify(updatedData));
+    await saveWaterData(updatedData);
   };
 
   const getTodayEntries = () => {
