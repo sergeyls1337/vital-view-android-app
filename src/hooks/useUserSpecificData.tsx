@@ -3,14 +3,18 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { dataService } from '@/services/dataService';
 
-export const useUserSpecificData = (dataKey: string, defaultValue: any = null) => {
+interface UseUserSpecificDataProps<T> {
+  dataKey: string;
+  defaultValue: T;
+}
+
+export function useUserSpecificData<T>({ dataKey, defaultValue }: UseUserSpecificDataProps<T>) {
   const { user } = useAuth();
-  const [data, setData] = useState(defaultValue);
+  const [data, setData] = useState<T>(defaultValue);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) {
-      setData(defaultValue);
       setLoading(false);
       return;
     }
@@ -18,7 +22,8 @@ export const useUserSpecificData = (dataKey: string, defaultValue: any = null) =
     const loadData = async () => {
       try {
         const userData = await dataService.getUserData(user.id);
-        setData(userData[dataKey] || defaultValue);
+        const specificData = userData[dataKey as keyof typeof userData];
+        setData(specificData || defaultValue);
       } catch (error) {
         console.error(`Error loading ${dataKey}:`, error);
         setData(defaultValue);
@@ -30,18 +35,18 @@ export const useUserSpecificData = (dataKey: string, defaultValue: any = null) =
     loadData();
   }, [user, dataKey, defaultValue]);
 
-  const updateData = async (newData: any) => {
+  const saveData = async (newData: T) => {
     if (!user) return;
 
     try {
       const userData = await dataService.getUserData(user.id);
-      userData[dataKey] = newData;
+      userData[dataKey as keyof typeof userData] = newData;
       await dataService.saveUserData(user.id, userData);
       setData(newData);
     } catch (error) {
-      console.error(`Error updating ${dataKey}:`, error);
+      console.error(`Error saving ${dataKey}:`, error);
     }
   };
 
-  return { data, updateData, loading };
-};
+  return { data, setData: saveData, loading };
+}

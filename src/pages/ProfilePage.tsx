@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { userService } from "@/services/userService";
@@ -9,7 +10,7 @@ import { toast } from "sonner";
 import PageHeader from "@/components/PageHeader";
 import BottomNavigation from "@/components/BottomNavigation";
 import { User, Settings, LogOut, RotateCcw } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/contexts/AuthContext";
 import { dataService } from "@/services/dataService";
 
 const ProfilePage = () => {
@@ -72,7 +73,7 @@ const ProfilePage = () => {
         goalWater: goalWater ? parseFloat(goalWater) : undefined,
       });
       
-      setUser(updatedUser);
+      setProfileUser(updatedUser);
       setIsEditing(false);
       toast.success("Profile updated successfully!");
     } catch (error) {
@@ -86,11 +87,6 @@ const ProfilePage = () => {
     try {
       // Clear user-specific data from database
       await dataService.clearUserData(user.id);
-      
-      // Also clear any remaining localStorage data (for migration)
-      localStorage.removeItem("activityData");
-      localStorage.removeItem("waterData");
-      localStorage.removeItem("stepsGoal");
       
       toast.success("All statistics have been reset!");
       

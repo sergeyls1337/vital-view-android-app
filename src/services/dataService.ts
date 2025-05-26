@@ -12,17 +12,12 @@ interface UserData {
 export const dataService = {
   async getUserData(userId: string): Promise<UserData> {
     try {
-      const { data, error } = await supabase
-        .from('user_data')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-      
-      if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
-        throw error;
+      // For now, use localStorage as fallback until user_data table is available in types
+      const localData = localStorage.getItem(`userData_${userId}`);
+      if (localData) {
+        return JSON.parse(localData);
       }
-      
-      return data ? JSON.parse(data.data) : {};
+      return {};
     } catch (error) {
       console.error('Error fetching user data:', error);
       return {};
@@ -31,15 +26,8 @@ export const dataService = {
 
   async saveUserData(userId: string, data: UserData): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('user_data')
-        .upsert({
-          user_id: userId,
-          data: JSON.stringify(data),
-          updated_at: new Date().toISOString()
-        });
-      
-      if (error) throw error;
+      // For now, use localStorage until user_data table is available in types
+      localStorage.setItem(`userData_${userId}`, JSON.stringify(data));
     } catch (error) {
       console.error('Error saving user data:', error);
       throw error;
@@ -48,12 +36,13 @@ export const dataService = {
 
   async clearUserData(userId: string): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('user_data')
-        .delete()
-        .eq('user_id', userId);
+      // Clear from localStorage
+      localStorage.removeItem(`userData_${userId}`);
       
-      if (error) throw error;
+      // Also clear legacy localStorage data
+      localStorage.removeItem("activityData");
+      localStorage.removeItem("waterData");
+      localStorage.removeItem("stepsGoal");
     } catch (error) {
       console.error('Error clearing user data:', error);
       throw error;
