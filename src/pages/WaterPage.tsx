@@ -4,8 +4,10 @@ import PageHeader from "@/components/PageHeader";
 import BottomNavigation from "@/components/BottomNavigation";
 import WaterIntakeControl from "@/components/WaterIntakeControl";
 import { useWaterData } from "@/hooks/useWaterData";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const WaterPage = () => {
+  const { t } = useLanguage();
   const { currentIntake, dailyGoal, addWaterIntake, getTodayEntries, weeklyData } = useWaterData();
   
   const handleWaterIntakeChange = (amount: number) => {
@@ -17,8 +19,8 @@ const WaterPage = () => {
   return (
     <div className="pb-20 px-6 max-w-lg mx-auto">
       <PageHeader 
-        title="Water Intake" 
-        description="Track your daily hydration"
+        title={t('dashboard.water')} 
+        description={t('water.trackHydration')}
       />
       
       <Card className="p-6 mb-6 flex flex-col items-center">
@@ -30,7 +32,7 @@ const WaterPage = () => {
       </Card>
       
       <Card className="p-5 mb-6">
-        <h3 className="font-medium mb-4">Today's Log</h3>
+        <h3 className="font-medium mb-4">{t('water.todaysLog')}</h3>
         <div className="space-y-3">
           {todayEntries.length > 0 ? (
             todayEntries.map((entry, index) => (
@@ -43,13 +45,13 @@ const WaterPage = () => {
               </div>
             ))
           ) : (
-            <p className="text-gray-500 text-center py-4">No water logged today yet</p>
+            <p className="text-gray-500 text-center py-4">{t('water.noWaterLogged')}</p>
           )}
         </div>
       </Card>
       
       <Card className="p-5">
-        <h3 className="font-medium mb-3">Weekly Overview</h3>
+        <h3 className="font-medium mb-3">{t('water.weeklyOverview')}</h3>
         <div className="flex justify-between items-end h-40 pt-10">
           {weeklyData.map((item, index) => {
             const heightPercent = Math.min(90, Math.max(10, (item.amount / dailyGoal) * 100));

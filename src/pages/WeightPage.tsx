@@ -7,6 +7,7 @@ import { toast } from "@/hooks/use-toast";
 import PageHeader from "@/components/PageHeader";
 import BottomNavigation from "@/components/BottomNavigation";
 import WeightTrackChart from "@/components/WeightTrackChart";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { TrendingDown, ChevronDown, TrendingUp } from "lucide-react";
 
 interface WeightEntry {
@@ -15,6 +16,7 @@ interface WeightEntry {
 }
 
 const WeightPage = () => {
+  const { t } = useLanguage();
   const [weightData, setWeightData] = useState<WeightEntry[]>([]);
   const [weight, setWeight] = useState("");
   const goalWeight = 70;
@@ -52,8 +54,8 @@ const WeightPage = () => {
   const handleAddWeight = () => {
     if (!weight || isNaN(parseFloat(weight))) {
       toast({
-        title: "Invalid weight",
-        description: "Please enter a valid number",
+        title: t('weight.invalidWeight'),
+        description: t('weight.enterValidNumber'),
         variant: "destructive"
       });
       return;
@@ -78,8 +80,8 @@ const WeightPage = () => {
     
     setWeight("");
     toast({
-      title: "Weight added",
-      description: `Added ${newWeight} kg to your records`,
+      title: t('weight.weightAdded'),
+      description: `${t('weight.added')} ${newWeight} kg ${t('weight.toRecords')}`,
     });
   };
   
@@ -90,13 +92,13 @@ const WeightPage = () => {
   return (
     <div className="pb-20 px-6 max-w-lg mx-auto">
       <PageHeader 
-        title="Weight Tracking" 
-        description="Monitor your weight progress"
+        title={t('navigation.weight')} 
+        description={t('weight.description')}
       />
       
       <Card className="p-5 mb-6">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="font-medium">Current Weight</h3>
+          <h3 className="font-medium">{t('weight.currentWeight')}</h3>
           <div className="flex items-center text-health-green">
             {weightDifference < 0 ? (
               <>
@@ -109,22 +111,22 @@ const WeightPage = () => {
                 <span className="text-sm text-red-500">+{weightDifference} kg</span>
               </>
             ) : (
-              <span className="text-sm">No change</span>
+              <span className="text-sm">{t('weight.noChange')}</span>
             )}
           </div>
         </div>
         
         <div className="flex justify-between items-center mb-6">
           <div>
-            <p className="text-sm text-gray-500">Current</p>
+            <p className="text-sm text-gray-500">{t('dashboard.current')}</p>
             <p className="text-2xl font-bold">{currentWeight} kg</p>
           </div>
           <div>
-            <p className="text-sm text-gray-500">Goal</p>
+            <p className="text-sm text-gray-500">{t('dashboard.goal')}</p>
             <p className="text-2xl font-bold text-health-green">{goalWeight} kg</p>
           </div>
           <div>
-            <p className="text-sm text-gray-500">Left</p>
+            <p className="text-sm text-gray-500">{t('weight.left')}</p>
             <p className="text-2xl font-bold text-health-blue">{weightToGoal > 0 ? weightToGoal : 0} kg</p>
           </div>
         </div>
@@ -133,7 +135,7 @@ const WeightPage = () => {
           <div className="relative flex-grow">
             <Input
               type="number"
-              placeholder="Enter weight"
+              placeholder={t('weight.enterWeight')}
               value={weight}
               onChange={(e) => setWeight(e.target.value)}
               className="pr-10"
@@ -147,14 +149,14 @@ const WeightPage = () => {
             className="bg-health-blue hover:bg-blue-600"
             onClick={handleAddWeight}
           >
-            Add
+            {t('weight.add')}
           </Button>
         </div>
       </Card>
       
       <Card className="p-5 mb-6">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="font-medium">Progress Chart</h3>
+          <h3 className="font-medium">{t('weight.progressChart')}</h3>
           <div className="flex items-center text-sm text-gray-500">
             <span>{new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
             <ChevronDown className="h-4 w-4 ml-1" />
@@ -165,7 +167,7 @@ const WeightPage = () => {
       </Card>
       
       <Card className="p-5">
-        <h3 className="font-medium mb-3">Weight History</h3>
+        <h3 className="font-medium mb-3">{t('weight.weightHistory')}</h3>
         {weightData.length > 0 ? (
           <div className="space-y-1">
             {[...weightData].reverse().map((entry, index) => (
@@ -176,7 +178,7 @@ const WeightPage = () => {
             ))}
           </div>
         ) : (
-          <p className="text-gray-500 text-center py-4">No weight entries yet</p>
+          <p className="text-gray-500 text-center py-4">{t('weight.noWeightEntries')}</p>
         )}
       </Card>
       
