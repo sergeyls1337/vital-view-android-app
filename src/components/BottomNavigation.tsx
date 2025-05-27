@@ -1,20 +1,22 @@
 
 import { Home, Activity, Droplets, Moon, LineChart } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const BottomNavigation = () => {
   const location = useLocation();
+  const { t } = useLanguage();
   
   const navItems = [
-    { path: "/", icon: Home, label: "Home" },
-    { path: "/activity", icon: Activity, label: "Activity" },
-    { path: "/water", icon: Droplets, label: "Water" },
-    { path: "/sleep", icon: Moon, label: "Sleep" },
-    { path: "/weight", icon: LineChart, label: "Weight" },
+    { path: "/", icon: Home, label: t('navigation.home') },
+    { path: "/activity", icon: Activity, label: t('navigation.activity') },
+    { path: "/water", icon: Droplets, label: t('navigation.water') },
+    { path: "/sleep", icon: Moon, label: t('navigation.sleep') },
+    { path: "/weight", icon: LineChart, label: t('navigation.weight') },
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-100 h-16 flex justify-around items-center px-2 z-50">
+    <div className="fixed bottom-0 left-0 right-0 bg-background shadow-lg border-t border-border h-16 flex justify-around items-center px-2 z-50">
       {navItems.map((item) => {
         const isActive = location.pathname === item.path;
         const Icon = item.icon;
@@ -24,7 +26,7 @@ const BottomNavigation = () => {
             key={item.path}
             to={item.path}
             className={`flex flex-col items-center justify-center w-1/5 ${
-              isActive ? "text-health-blue" : "text-gray-500"
+              isActive ? "text-health-blue" : "text-muted-foreground"
             }`}
           >
             <div className="relative">
