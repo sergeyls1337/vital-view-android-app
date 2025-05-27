@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import PageHeader from "@/components/PageHeader";
 import BottomNavigation from "@/components/BottomNavigation";
 import SleepQualityChart from "@/components/SleepQualityChart";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Moon, Sunrise, Clock, Calendar } from "lucide-react";
 
 interface SleepEntry {
@@ -20,6 +21,7 @@ interface SleepEntry {
 }
 
 const SleepPage = () => {
+  const { t } = useLanguage();
   const [sleepHours, setSleepHours] = useState<number>(7.5);
   const [sleepQuality, setSleepQuality] = useState<number>(8);
   const [bedtime, setBedtime] = useState<string>("23:30");
@@ -109,7 +111,7 @@ const SleepPage = () => {
       });
     
     setSleepData(chartData);
-    toast.success("Sleep data saved successfully!");
+    toast.success(t('sleep.dataSaved'));
   };
 
   const getAverageSleep = (): number => {
@@ -124,6 +126,14 @@ const SleepPage = () => {
     return parseFloat((total / sleepEntries.length).toFixed(1));
   };
 
+  const getBestSleepDay = (): string => {
+    if (sleepEntries.length === 0) return t('sleep.na');
+    const bestEntry = sleepEntries.reduce((best, entry) => 
+      entry.quality > best.quality ? entry : best
+    , sleepEntries[0]);
+    return new Date(bestEntry.date).toLocaleDateString('en-US', {weekday: 'short'});
+  };
+
   // Get the most recent entry
   const latestEntry = sleepEntries.length > 0 
     ? sleepEntries[sleepEntries.length - 1] 
@@ -132,12 +142,12 @@ const SleepPage = () => {
   return (
     <div className="pb-20 px-6 max-w-lg mx-auto">
       <PageHeader 
-        title="Sleep Tracker" 
-        description="Monitor your sleep patterns"
+        title={t('navigation.sleep')} 
+        description={t('sleep.description')}
       />
       
       <Card className="p-5 mb-6">
-        <h3 className="font-medium mb-4">Last Night's Sleep</h3>
+        <h3 className="font-medium mb-4">{t('sleep.lastNightSleep')}</h3>
         
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center">
@@ -145,12 +155,12 @@ const SleepPage = () => {
               <Moon className="text-health-purple h-6 w-6" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Duration</p>
-              <p className="text-xl font-bold">{latestEntry.hours} hours</p>
+              <p className="text-sm text-gray-500">{t('sleep.duration')}</p>
+              <p className="text-xl font-bold">{latestEntry.hours} {t('dashboard.hours')}</p>
             </div>
           </div>
           <div>
-            <p className="text-sm text-gray-500">Quality</p>
+            <p className="text-sm text-gray-500">{t('sleep.quality')}</p>
             <div className="flex">
               {[...Array(5)].map((_, i) => (
                 <svg 
@@ -172,7 +182,7 @@ const SleepPage = () => {
               <Moon className="text-gray-600 h-5 w-5" />
             </div>
             <div>
-              <p className="text-xs text-gray-500">Bedtime</p>
+              <p className="text-xs text-gray-500">{t('sleep.bedtime')}</p>
               <p className="font-medium">{latestEntry.bedtime}</p>
             </div>
           </div>
@@ -181,7 +191,7 @@ const SleepPage = () => {
               <Sunrise className="text-gray-600 h-5 w-5" />
             </div>
             <div>
-              <p className="text-xs text-gray-500">Wake up</p>
+              <p className="text-xs text-gray-500">{t('sleep.wakeUp')}</p>
               <p className="font-medium">{latestEntry.wakeTime}</p>
             </div>
           </div>
@@ -190,15 +200,15 @@ const SleepPage = () => {
       
       <Card className="p-5 mb-6">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="font-medium">Weekly Overview</h3>
+          <h3 className="font-medium">{t('sleep.weeklyOverview')}</h3>
           <div className="flex items-center text-xs">
             <div className="flex items-center mr-3">
               <div className="w-3 h-3 bg-health-purple rounded-sm mr-1" />
-              <span>Hours</span>
+              <span>{t('dashboard.hours')}</span>
             </div>
             <div className="flex items-center">
               <div className="w-3 h-3 bg-health-teal rounded-sm mr-1" />
-              <span>Quality</span>
+              <span>{t('sleep.quality')}</span>
             </div>
           </div>
         </div>
@@ -207,38 +217,32 @@ const SleepPage = () => {
       </Card>
       
       <Card className="p-5 mb-6">
-        <h3 className="font-medium mb-4">Sleep Statistics</h3>
+        <h3 className="font-medium mb-4">{t('sleep.statistics')}</h3>
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-gray-50 p-3 rounded-lg">
-            <p className="text-xs text-gray-500">Average Sleep Duration</p>
-            <p className="text-xl font-bold">{getAverageSleep()} hrs</p>
+            <p className="text-xs text-gray-500">{t('sleep.averageDuration')}</p>
+            <p className="text-xl font-bold">{getAverageSleep()} {t('sleep.hrs')}</p>
           </div>
           <div className="bg-gray-50 p-3 rounded-lg">
-            <p className="text-xs text-gray-500">Average Sleep Quality</p>
+            <p className="text-xs text-gray-500">{t('sleep.averageQuality')}</p>
             <p className="text-xl font-bold">{getAverageQuality()}/10</p>
           </div>
           <div className="bg-gray-50 p-3 rounded-lg">
-            <p className="text-xs text-gray-500">Total Entries</p>
+            <p className="text-xs text-gray-500">{t('sleep.totalEntries')}</p>
             <p className="text-xl font-bold">{sleepEntries.length}</p>
           </div>
           <div className="bg-gray-50 p-3 rounded-lg">
-            <p className="text-xs text-gray-500">Best Sleep Day</p>
-            <p className="text-xl font-bold">
-              {sleepEntries.length > 0 
-                ? new Date(sleepEntries.reduce((best, entry) => 
-                    entry.quality > best.quality ? entry : best
-                  , sleepEntries[0]).date).toLocaleDateString('en-US', {weekday: 'short'})
-                : "N/A"}
-            </p>
+            <p className="text-xs text-gray-500">{t('sleep.bestSleepDay')}</p>
+            <p className="text-xl font-bold">{getBestSleepDay()}</p>
           </div>
         </div>
       </Card>
       
       <Card className="p-5 mb-6">
-        <h3 className="font-medium mb-4">Log Tonight's Sleep</h3>
+        <h3 className="font-medium mb-4">{t('sleep.logTonightSleep')}</h3>
         <div className="space-y-4">
           <div>
-            <Label htmlFor="sleepDate">Date</Label>
+            <Label htmlFor="sleepDate">{t('sleep.date')}</Label>
             <div className="flex items-center mt-1">
               <Calendar className="h-4 w-4 text-gray-500 mr-2" />
               <Input
@@ -251,7 +255,7 @@ const SleepPage = () => {
           </div>
 
           <div>
-            <Label htmlFor="sleepHours">Sleep Duration (hours)</Label>
+            <Label htmlFor="sleepHours">{t('sleep.sleepDuration')}</Label>
             <div className="flex items-center mt-1">
               <Clock className="h-4 w-4 text-gray-500 mr-2" />
               <Input
@@ -260,14 +264,14 @@ const SleepPage = () => {
                 step="0.1"
                 min="0"
                 max="24"
-                value={sleepHours}
-                onChange={(e) => setSleepHours(parseFloat(e.target.value))}
+                value={sleepHours || ''}
+                onChange={(e) => setSleepHours(parseFloat(e.target.value) || 0)}
               />
             </div>
           </div>
           
           <div>
-            <Label htmlFor="sleepQuality">Sleep Quality (1-10)</Label>
+            <Label htmlFor="sleepQuality">{t('sleep.sleepQuality')}</Label>
             <Input
               id="sleepQuality"
               type="range"
@@ -279,15 +283,15 @@ const SleepPage = () => {
               className="mt-1"
             />
             <div className="flex justify-between text-xs text-gray-500 mt-1">
-              <span>Poor</span>
-              <span>Average</span>
-              <span>Excellent</span>
+              <span>{t('sleep.poor')}</span>
+              <span>{t('sleep.average')}</span>
+              <span>{t('sleep.excellent')}</span>
             </div>
           </div>
           
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="bedtime">Bedtime</Label>
+              <Label htmlFor="bedtime">{t('sleep.bedtime')}</Label>
               <Input
                 id="bedtime"
                 type="time"
@@ -297,7 +301,7 @@ const SleepPage = () => {
               />
             </div>
             <div>
-              <Label htmlFor="wakeTime">Wake Time</Label>
+              <Label htmlFor="wakeTime">{t('sleep.wakeTime')}</Label>
               <Input
                 id="wakeTime"
                 type="time"
@@ -312,7 +316,7 @@ const SleepPage = () => {
             className="w-full bg-health-purple hover:bg-purple-600"
             onClick={handleLogSleep}
           >
-            Save Sleep Data
+            {t('sleep.saveSleepData')}
           </Button>
         </div>
       </Card>

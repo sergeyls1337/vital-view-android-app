@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Edit, Settings } from "lucide-react";
 import ActivityRing from "@/components/ActivityRing";
 import { DailyActivity } from "@/types/activity";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface ActivityStatsCardProps {
   currentActivity: DailyActivity;
@@ -25,12 +26,14 @@ const ActivityStatsCard = ({
   onIncreaseSteps,
   onDecreaseSteps
 }: ActivityStatsCardProps) => {
+  const { t } = useLanguage();
+
   return (
     <Card className="p-5 mb-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-medium">Today's Progress</h3>
+        <h3 className="font-medium">{t('activity.todaysProgress')}</h3>
         <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-500">Goal: {stepsGoal.toLocaleString()} steps</span>
+          <span className="text-sm text-gray-500">{t('activity.goal')}: {stepsGoal.toLocaleString()} {t('dashboard.steps')}</span>
           <Button 
             variant="ghost" 
             size="icon"
@@ -56,7 +59,7 @@ const ActivityStatsCard = ({
           size={180}
           strokeWidth={12}
           color="#3b82f6"
-          label="Steps"
+          label={t('dashboard.steps')}
           value={currentActivity.steps?.toLocaleString() || '0'}
         />
       </div>
@@ -72,7 +75,7 @@ const ActivityStatsCard = ({
         </Button>
         <div className="text-center">
           <p className="text-2xl font-bold">{currentActivity.steps?.toLocaleString() || '0'}</p>
-          <p className="text-sm text-gray-500">steps today</p>
+          <p className="text-sm text-gray-500">{t('activity.stepsToday')}</p>
         </div>
         <Button 
           variant="outline" 
@@ -86,15 +89,15 @@ const ActivityStatsCard = ({
       
       <div className="grid grid-cols-3 gap-4 mb-4">
         <div className="text-center">
-          <p className="text-sm text-gray-500">Distance</p>
+          <p className="text-sm text-gray-500">{t('activity.distance')}</p>
           <p className="text-lg font-bold">{currentActivity.distance || 0} km</p>
         </div>
         <div className="text-center">
-          <p className="text-sm text-gray-500">Calories</p>
+          <p className="text-sm text-gray-500">{t('dashboard.calories')}</p>
           <p className="text-lg font-bold">{currentActivity.calories || 0} kcal</p>
         </div>
         <div className="text-center">
-          <p className="text-sm text-gray-500">Time</p>
+          <p className="text-sm text-gray-500">{t('activity.time')}</p>
           <p className="text-lg font-bold">{currentActivity.duration || 0} min</p>
         </div>
       </div>
