@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { MessageCircle, Send } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ContactDeveloperProps {
   isOpen: boolean;
@@ -29,9 +30,17 @@ const ContactDeveloper = ({ isOpen, onClose }: ContactDeveloperProps) => {
     setIsSubmitting(true);
 
     try {
-      // Simulate sending feedback
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log("Sending feedback:", feedback);
       
+      const { data, error } = await supabase.functions.invoke('send-feedback', {
+        body: feedback,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      console.log("Feedback sent successfully:", data);
       toast.success(t('feedback.sent'));
       setFeedback({
         type: 'feedback',
@@ -40,7 +49,8 @@ const ContactDeveloper = ({ isOpen, onClose }: ContactDeveloperProps) => {
         email: '',
       });
       onClose();
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Error sending feedback:", error);
       toast.error(t('feedback.error'));
     } finally {
       setIsSubmitting(false);

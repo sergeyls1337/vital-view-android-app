@@ -61,7 +61,7 @@ const AuthPage = () => {
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
-        redirectTo: `${window.location.origin}/auth?type=recovery`,
+        redirectTo: "https://swxiagysoqjihocqrlwp.supabase.co/auth/v1/verify?redirect_to=https://your-app-url.lovableproject.com/confirm",
       });
       
       if (error) throw error;
@@ -298,6 +298,13 @@ const AuthPage = () => {
       </Card>
     </div>
   );
+};
+
+const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  setFormData({
+    ...formData,
+    [e.target.name]: e.target.value,
+  });
 };
 
 export default AuthPage;
