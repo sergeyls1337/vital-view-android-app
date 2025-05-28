@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,50 +8,23 @@ import PageHeader from "@/components/PageHeader";
 import BottomNavigation from "@/components/BottomNavigation";
 import WeightTrackChart from "@/components/WeightTrackChart";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useWeightData } from "@/hooks/useWeightData";
 import { TrendingDown, ChevronDown, TrendingUp } from "lucide-react";
-
-interface WeightEntry {
-  date: string;
-  weight: number;
-}
 
 const WeightPage = () => {
   const { t } = useLanguage();
-  const [weightData, setWeightData] = useState<WeightEntry[]>([]);
+  const { weightEntries, loading, saveWeightEntry, getCurrentWeight } = useWeightData();
   const [weight, setWeight] = useState("");
   const goalWeight = 70;
   
-  // Load saved data from localStorage on component mount
-  useEffect(() => {
-    const savedWeightData = localStorage.getItem("weightData");
-    if (savedWeightData) {
-      setWeightData(JSON.parse(savedWeightData));
-    } else {
-      // Default data if nothing is saved yet
-      const initialData = [
-        { date: "May 1", weight: 77.5 },
-        { date: "May 5", weight: 77.0 },
-        { date: "May 9", weight: 76.2 },
-        { date: "May 13", weight: 75.8 },
-        { date: "May 17", weight: 75.0 },
-        { date: "May 21", weight: 74.5 },
-        { date: "May 25", weight: 75.0 },
-      ];
-      setWeightData(initialData);
-      localStorage.setItem("weightData", JSON.stringify(initialData));
-    }
-  }, []);
-
-  const getCurrentWeight = () => {
-    return weightData.length > 0 ? weightData[weightData.length - 1].weight : 0;
-  };
+  const currentWeight = getCurrentWeight();
 
   const getWeightDifference = () => {
-    if (weightData.length < 2) return 0;
-    return +(getCurrentWeight() - weightData[0].weight).toFixed(1);
+    if (weightEntries.length < 2) return 0;
+    return +(currentWeight - weightEntries[0].weight).toFixed(1);
   };
   
-  const handleAddWeight = () => {
+  const handleAddWeight = async () => {
     if (!weight || isNaN(parseFloat(weight))) {
       toast({
         title: t('weight.invalidWeight'),
@@ -62,32 +35,34 @@ const WeightPage = () => {
     }
 
     const newWeight = parseFloat(weight);
+    const success = await saveWeightEntry(newWeight);
     
-    // Format today's date as "Month Day"
-    const today = new Date();
-    const date = today.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    
-    const newEntry = {
-      date,
-      weight: newWeight,
-    };
-
-    const updatedData = [...weightData, newEntry];
-    setWeightData(updatedData);
-    
-    // Save to localStorage
-    localStorage.setItem("weightData", JSON.stringify(updatedData));
-    
-    setWeight("");
-    toast({
-      title: t('weight.weightAdded'),
-      description: `${t('weight.added')} ${newWeight} kg ${t('weight.toRecords')}`,
-    });
+    if (success) {
+      setWeight("");
+      toast({
+        title: t('weight.weightAdded'),
+        description: `${t('weight.added')} ${newWeight} kg ${t('weight.toRecords')}`,
+      });
+    }
   };
   
   const weightDifference = getWeightDifference();
-  const currentWeight = getCurrentWeight();
   const weightToGoal = +(currentWeight - goalWeight).toFixed(1);
+
+  if (loading) {
+    return (
+      <div className="pb-20 px-6 max-w-lg mx-auto">
+        <PageHeader 
+          title={t('navigation.weight')} 
+          description={t('weight.description')}
+        />
+        <div className="flex justify-center items-center h-64">
+          <div className="text-gray-500">Loading weight data...</div>
+        </div>
+        <BottomNavigation />
+      </div>
+    );
+  }
   
   return (
     <div className="pb-20 px-6 max-w-lg mx-auto">
@@ -163,14 +138,14 @@ const WeightPage = () => {
           </div>
         </div>
         
-        <WeightTrackChart data={weightData} goalWeight={goalWeight} />
+        <WeightTrackChart data={weightEntries} goalWeight={goalWeight} />
       </Card>
       
       <Card className="p-5">
         <h3 className="font-medium mb-3">{t('weight.weightHistory')}</h3>
-        {weightData.length > 0 ? (
+        {weightEntries.length > 0 ? (
           <div className="space-y-1">
-            {[...weightData].reverse().map((entry, index) => (
+            {[...weightEntries].reverse().map((entry, index) => (
               <div key={index} className="flex justify-between items-center py-2 border-b border-gray-100">
                 <span>{entry.date}</span>
                 <span className="font-medium">{entry.weight} kg</span>

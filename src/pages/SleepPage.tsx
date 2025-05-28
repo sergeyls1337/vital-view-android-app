@@ -19,9 +19,10 @@ const SleepPage = () => {
   const [sleepQuality, setSleepQuality] = useState<number>(8);
   const [bedtime, setBedtime] = useState<string>("23:30");
   const [wakeTime, setWakeTime] = useState<string>("07:00");
-  const [sleepDate, setSleepDate] = useState<string>(
-    new Date().toISOString().split('T')[0]
-  );
+  
+  // Always default to today's date for new entries
+  const today = new Date().toISOString().split('T')[0];
+  const [sleepDate, setSleepDate] = useState<string>(today);
 
   // Get chart data from the last 7 entries
   const sleepData = useMemo(() => {
@@ -48,10 +49,12 @@ const SleepPage = () => {
     });
 
     if (success) {
-      // Reset form to tomorrow's date
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      setSleepDate(tomorrow.toISOString().split('T')[0]);
+      // Reset form to today's date
+      setSleepDate(today);
+      setSleepHours(7.5);
+      setSleepQuality(8);
+      setBedtime("23:30");
+      setWakeTime("07:00");
     }
   };
 
@@ -75,10 +78,18 @@ const SleepPage = () => {
     return new Date(bestEntry.date).toLocaleDateString('en-US', {weekday: 'short'});
   };
 
-  // Get the most recent entry
-  const latestEntry = sleepEntries.length > 0 
-    ? sleepEntries[0] 
-    : { hours: 7.5, quality: 4, bedtime: "23:30", wakeTime: "07:00" };
+  // Get the most recent entry for today or latest entry
+  const getTodayEntry = () => {
+    const todayEntry = sleepEntries.find(entry => entry.date === today);
+    return todayEntry || (sleepEntries.length > 0 ? sleepEntries[0] : null);
+  };
+
+  const latestEntry = getTodayEntry() || { 
+    hours: 0, 
+    quality: 0, 
+    bedtime: "00:00", 
+    wakeTime: "00:00" 
+  };
 
   if (loading) {
     return (
@@ -154,23 +165,25 @@ const SleepPage = () => {
         </div>
       </Card>
       
-      <Card className="p-5 mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="font-medium">{t('sleep.weeklyOverview')}</h3>
-          <div className="flex items-center text-xs">
-            <div className="flex items-center mr-3">
-              <div className="w-3 h-3 bg-health-purple rounded-sm mr-1" />
-              <span>{t('dashboard.hours')}</span>
-            </div>
-            <div className="flex items-center">
-              <div className="w-3 h-3 bg-health-teal rounded-sm mr-1" />
-              <span>{t('sleep.quality')}</span>
+      {sleepData.length > 0 && (
+        <Card className="p-5 mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-medium">{t('sleep.weeklyOverview')}</h3>
+            <div className="flex items-center text-xs">
+              <div className="flex items-center mr-3">
+                <div className="w-3 h-3 bg-health-purple rounded-sm mr-1" />
+                <span>{t('dashboard.hours')}</span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-3 h-3 bg-health-teal rounded-sm mr-1" />
+                <span>{t('sleep.quality')}</span>
+              </div>
             </div>
           </div>
-        </div>
-        
-        <SleepQualityChart data={sleepData} />
-      </Card>
+          
+          <SleepQualityChart data={sleepData} />
+        </Card>
+      )}
       
       <Card className="p-5 mb-6">
         <h3 className="font-medium mb-4">{t('sleep.statistics')}</h3>
@@ -242,6 +255,9 @@ const SleepPage = () => {
               <span>{t('sleep.poor')}</span>
               <span>{t('sleep.average')}</span>
               <span>{t('sleep.excellent')}</span>
+            </div>
+            <div className="text-center text-sm font-medium mt-1">
+              {sleepQuality}/10
             </div>
           </div>
           

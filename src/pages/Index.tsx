@@ -13,6 +13,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { userService } from "@/services/userService";
 import { useWaterData } from "@/hooks/useWaterData";
 import { useActivityData } from "@/hooks/useActivityData";
+import { useSleepData } from "@/hooks/useSleepData";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -22,12 +23,23 @@ const Index = () => {
   const [showSettings, setShowSettings] = useState(false);
   const { currentIntake, dailyGoal } = useWaterData();
   const { currentActivity, stepsProgress } = useActivityData();
+  const { sleepEntries } = useSleepData();
+  
+  // Get weight data from localStorage (same as WeightPage)
+  const [weightData, setWeightData] = useState([]);
   
   useEffect(() => {
     if (user) {
       userService.getCurrentUser().then(setUserProfile);
     }
   }, [user]);
+
+  useEffect(() => {
+    const savedWeightData = localStorage.getItem("weightData");
+    if (savedWeightData) {
+      setWeightData(JSON.parse(savedWeightData));
+    }
+  }, []);
   
   const currentDate = new Date().toLocaleDateString(undefined, { 
     weekday: 'long', 
@@ -37,6 +49,19 @@ const Index = () => {
 
   const waterProgress = Math.min(100, Math.round((currentIntake / dailyGoal) * 100));
   const waterInLiters = (currentIntake / 1000).toFixed(1);
+
+  // Get latest sleep data
+  const latestSleepEntry = sleepEntries.length > 0 ? sleepEntries[0] : null;
+  const sleepHours = latestSleepEntry ? latestSleepEntry.hours : 0;
+  const sleepProgress = latestSleepEntry ? Math.min(100, Math.round((latestSleepEntry.hours / 8) * 100)) : 0;
+
+  // Get current weight
+  const getCurrentWeight = () => {
+    return weightData.length > 0 ? weightData[weightData.length - 1].weight : 0;
+  };
+
+  const currentWeight = getCurrentWeight();
+  const goalWeight = 70;
 
   return (
     <div className="pb-20 max-w-lg mx-auto">
@@ -99,7 +124,7 @@ const Index = () => {
             >
               <Moon className="h-5 w-5 mb-1" />
               <span className="text-xs">{t('dashboard.sleep')}</span>
-              <span className="text-lg font-semibold">7.5h</span>
+              <span className="text-lg font-semibold">{sleepHours}h</span>
             </div>
             <div 
               className="bg-white/20 rounded-xl p-3 flex flex-col items-center cursor-pointer"
@@ -107,7 +132,7 @@ const Index = () => {
             >
               <Scale className="h-5 w-5 mb-1" />
               <span className="text-xs">{t('dashboard.weight')}</span>
-              <span className="text-lg font-semibold">75kg</span>
+              <span className="text-lg font-semibold">{currentWeight || 0}kg</span>
             </div>
           </div>
         </div>
@@ -143,11 +168,11 @@ const Index = () => {
           />
           <HealthMetricCard
             title={t('dashboard.sleep')}
-            value="7.5"
+            value={sleepHours.toString()}
             icon={<Moon className="h-5 w-5 text-white" />}
             color="bg-health-purple"
             unit={t('dashboard.hours')}
-            progress={94}
+            progress={sleepProgress}
           />
         </div>
         
@@ -156,11 +181,11 @@ const Index = () => {
           <div className="flex justify-between items-end">
             <div>
               <p className="text-sm text-gray-500">{t('dashboard.current')}</p>
-              <p className="text-xl font-bold">75 kg</p>
+              <p className="text-xl font-bold">{currentWeight || 0} kg</p>
             </div>
             <div>
               <p className="text-sm text-gray-500">{t('dashboard.goal')}</p>
-              <p className="text-xl font-bold text-health-green">70 kg</p>
+              <p className="text-xl font-bold text-health-green">{goalWeight} kg</p>
             </div>
             <Button 
               className="bg-health-blue hover:bg-health-teal text-xs h-9"
