@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { DailyActivity, ActivityType } from "@/types/activity";
 import { toast } from "@/hooks/use-toast";
@@ -178,6 +179,21 @@ export const useActivityData = () => {
     return [...activities].reverse().slice(0, 5);
   };
 
+  const getCurrentWeekStats = () => {
+    const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    
+    return weekdays.map((day) => {
+      const activity = activities.find(a => a.date === day);
+      return {
+        day,
+        steps: activity ? activity.steps : 0,
+        calories: activity ? activity.calories : 0,
+        distance: activity ? activity.distance : 0,
+        duration: activity ? activity.duration : 0
+      };
+    });
+  };
+
   return {
     isTracking,
     setIsTracking,
@@ -196,6 +212,7 @@ export const useActivityData = () => {
     handleIncreaseSteps,
     handleDecreaseSteps,
     getWeeklyActivities,
-    getRecentActivities
+    getRecentActivities,
+    getCurrentWeekStats
   };
 };
