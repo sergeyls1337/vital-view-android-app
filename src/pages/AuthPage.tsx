@@ -1,81 +1,34 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import { Card } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { User, UserPlus, Mail, ArrowLeft } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { Eye, EyeOff } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useEffect } from "react";
 
 const AuthPage = () => {
-  const navigate = useNavigate();
-  const { signIn, signUp } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [showEmailSent, setShowEmailSent] = useState(false);
-  const [emailSentType, setEmailSentType] = useState<'signup' | 'reset'>('signup');
+  const [showPassword, setShowPassword] = useState(false);
+  const [isResetMode, setIsResetMode] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
-    username: "",
     confirmPassword: "",
   });
+  
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      if (isLogin) {
-        await signIn(formData.email, formData.password);
-        toast.success("Login successful!");
-        navigate("/");
-      } else {
-        if (formData.password !== formData.confirmPassword) {
-          toast.error("Passwords don't match");
-          return;
-        }
-        await signUp(formData.email, formData.password, formData.username);
-        setEmailSentType('signup');
-        setShowEmailSent(true);
-        toast.success("Account created successfully! Please check your email to verify your account.");
-      }
-    } catch (error: any) {
-      toast.error(error.message || "An error occurred");
-    } finally {
-      setIsLoading(false);
+  useEffect(() => {
+    const type = searchParams.get('type');
+    if (type === 'recovery') {
+      setIsResetMode(true);
     }
-  };
-
-  const handleForgotPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.email) {
-      toast.error("Please enter your email address");
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
-        redirectTo: "https://swxiagysoqjihocqrlwp.supabase.co/auth/v1/verify?redirect_to=https://your-app-url.lovableproject.com/confirm",
-      });
-      
-      if (error) throw error;
-      
-      setEmailSentType('reset');
-      setShowEmailSent(true);
-      setShowForgotPassword(false);
-      toast.success("Password reset email sent! Check your inbox.");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to send reset email");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [searchParams]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -84,227 +37,202 @@ const AuthPage = () => {
     });
   };
 
-  if (showEmailSent) {
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (formData.password !== formData.confirmPassword) {
+      toast.error("Passwords don't match");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+      });
+      
+      if (error) throw error;
+      
+      toast.success("Check your email for verification link");
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
+      });
+      
+      if (error) throw error;
+      
+      navigate("/");
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
+        redirectTo: "https://swxiagysoqjihocqrlwp.supabase.co/auth/v1/verify?redirect_to=https://your-app-url.lovableproject.com/confirm",
+      });
+      
+      if (error) throw error;
+      
+      toast.success("Password reset email sent!");
+      setIsResetMode(false);
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isResetMode) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-health-purple to-health-blue p-4">
-        <Card className="w-full max-w-md p-8 text-center">
-          <div className="w-16 h-16 bg-health-purple/20 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Mail className="h-8 w-8 text-health-purple" />
-          </div>
-          
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
-            {emailSentType === 'signup' ? 'Check Your Email' : 'Reset Link Sent'}
-          </h1>
-          
-          <p className="text-gray-600 mb-6">
-            {emailSentType === 'signup' 
-              ? `We've sent a verification link to ${formData.email}. Please check your email and click the link to verify your account.`
-              : `We've sent a password reset link to ${formData.email}. Please check your email and follow the instructions to reset your password.`
-            }
-          </p>
-          
-          <div className="space-y-3">
-            <Button 
-              onClick={() => {
-                setShowEmailSent(false);
-                setEmailSentType('signup');
-              }}
-              variant="outline" 
-              className="w-full"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to {isLogin ? 'Sign In' : 'Sign Up'}
-            </Button>
-            
-            <p className="text-sm text-gray-500">
-              Didn't receive an email? Check your spam folder or try again.
-            </p>
-          </div>
-        </Card>
-      </div>
-    );
-  }
-
-  if (showForgotPassword) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-health-purple to-health-blue p-4">
-        <Card className="w-full max-w-md p-8">
-          <div className="flex items-center justify-center mb-8">
-            <div className="w-16 h-16 bg-health-purple/20 rounded-full flex items-center justify-center">
-              <Mail className="h-8 w-8 text-health-purple" />
-            </div>
-          </div>
-          
-          <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Reset Password</h1>
-            <p className="text-gray-600">
-              Enter your email address and we'll send you a link to reset your password
-            </p>
-          </div>
-
-          <form onSubmit={handleForgotPassword} className="space-y-4">
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                placeholder="Enter your email"
-                required
-              />
-            </div>
-            
-            <Button 
-              type="submit" 
-              className="w-full bg-health-purple hover:bg-purple-600"
-              disabled={isLoading}
-            >
-              {isLoading ? "Sending..." : "Send Reset Link"}
-            </Button>
-          </form>
-
-          <div className="mt-6 text-center">
-            <button
-              type="button"
-              onClick={() => setShowForgotPassword(false)}
-              className="text-health-purple hover:text-purple-600 text-sm font-medium"
-            >
-              <ArrowLeft className="h-4 w-4 inline mr-1" />
-              Back to Sign In
-            </button>
-          </div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-health-light via-white to-health-green/10 p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl font-bold text-health-dark">Reset Password</CardTitle>
+            <CardDescription>Enter your email to receive a reset link</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <div>
+                <Input
+                  type="email"
+                  name="email"
+                  placeholder="Email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <Button 
+                type="submit" 
+                className="w-full bg-health-blue hover:bg-blue-600"
+                disabled={isLoading}
+              >
+                {isLoading ? "Sending..." : "Send Reset Link"}
+              </Button>
+              <Button 
+                type="button"
+                variant="ghost"
+                className="w-full"
+                onClick={() => setIsResetMode(false)}
+              >
+                Back to Login
+              </Button>
+            </form>
+          </CardContent>
         </Card>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-health-purple to-health-blue p-4">
-      <Card className="w-full max-w-md p-8">
-        <div className="flex items-center justify-center mb-8">
-          <div className="w-16 h-16 bg-health-purple/20 rounded-full flex items-center justify-center">
-            {isLogin ? (
-              <User className="h-8 w-8 text-health-purple" />
-            ) : (
-              <UserPlus className="h-8 w-8 text-health-purple" />
-            )}
-          </div>
-        </div>
-        
-        <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-health-light via-white to-health-green/10 p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold text-health-dark">
             {isLogin ? "Welcome Back" : "Create Account"}
-          </h1>
-          <p className="text-gray-600">
-            {isLogin ? "Sign in to your health tracking account" : "Join HealthTrack to start monitoring your wellness"}
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {!isLogin && (
+          </CardTitle>
+          <CardDescription>
+            {isLogin ? "Sign in to your HealthTrack account" : "Start your health journey today"}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={isLogin ? handleSignIn : handleSignUp} className="space-y-4">
             <div>
-              <Label htmlFor="username">Username</Label>
               <Input
-                id="username"
-                name="username"
-                type="text"
-                value={formData.username}
+                type="email"
+                name="email"
+                placeholder="Email"
+                value={formData.email}
                 onChange={handleInputChange}
-                placeholder="Enter your username"
-                required={!isLogin}
+                required
               />
             </div>
-          )}
-          
-          <div>
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              placeholder="Enter your email"
-              required
-            />
-          </div>
-          
-          <div>
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              value={formData.password}
-              onChange={handleInputChange}
-              placeholder="Enter your password"
-              required
-            />
-          </div>
-
-          {!isLogin && (
-            <div>
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <div className="relative">
               <Input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                value={formData.confirmPassword}
+                type={showPassword ? "text" : "password"}
+                name="password"
+                placeholder="Password"
+                value={formData.password}
                 onChange={handleInputChange}
-                placeholder="Confirm your password"
-                required={!isLogin}
+                required
               />
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4 text-gray-500" />
+                ) : (
+                  <Eye className="h-4 w-4 text-gray-500" />
+                )}
+              </button>
             </div>
-          )}
-          
-          <Button 
-            type="submit" 
-            className="w-full bg-health-purple hover:bg-purple-600"
-            disabled={isLoading}
-          >
-            {isLoading 
-              ? (isLogin ? "Signing in..." : "Creating account...") 
-              : (isLogin ? "Sign In" : "Create Account")
-            }
-          </Button>
-        </form>
-
-        {isLogin && (
-          <div className="mt-4 text-center">
-            <button
-              type="button"
-              onClick={() => setShowForgotPassword(true)}
-              className="text-health-purple hover:text-purple-600 text-sm font-medium"
+            {!isLogin && (
+              <div>
+                <Input
+                  type="password"
+                  name="confirmPassword"
+                  placeholder="Confirm Password"
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+            )}
+            <Button 
+              type="submit" 
+              className="w-full bg-health-blue hover:bg-blue-600"
+              disabled={isLoading}
             >
-              Forgot your password?
-            </button>
+              {isLoading ? "Loading..." : (isLogin ? "Sign In" : "Sign Up")}
+            </Button>
+          </form>
+          
+          <div className="mt-4 text-center space-y-2">
+            {isLogin && (
+              <button
+                type="button"
+                className="text-sm text-health-blue hover:underline"
+                onClick={() => setIsResetMode(true)}
+              >
+                Forgot your password?
+              </button>
+            )}
+            <div>
+              <button
+                type="button"
+                className="text-sm text-health-blue hover:underline"
+                onClick={() => {
+                  setIsLogin(!isLogin);
+                  setFormData({ email: "", password: "", confirmPassword: "" });
+                }}
+              >
+                {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
+              </button>
+            </div>
           </div>
-        )}
-
-        <div className="mt-6 text-center">
-          <button
-            type="button"
-            onClick={() => setIsLogin(!isLogin)}
-            className="text-health-purple hover:text-purple-600 text-sm font-medium"
-          >
-            {isLogin 
-              ? "Don't have an account? Sign up" 
-              : "Already have an account? Sign in"
-            }
-          </button>
-        </div>
+        </CardContent>
       </Card>
     </div>
   );
-};
-
-const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  setFormData({
-    ...formData,
-    [e.target.name]: e.target.value,
-  });
 };
 
 export default AuthPage;

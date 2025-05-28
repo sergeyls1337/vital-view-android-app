@@ -15,6 +15,7 @@ import ActivityPage from "./pages/ActivityPage";
 import WaterPage from "./pages/WaterPage";
 import SleepPage from "./pages/SleepPage";
 import WeightPage from "./pages/WeightPage";
+import StatisticsPage from "./pages/StatisticsPage";
 import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
 
@@ -55,6 +56,11 @@ const App = () => (
                 <Route path="/weight" element={
                   <ProtectedRoute>
                     <WeightPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/statistics" element={
+                  <ProtectedRoute>
+                    <StatisticsPage />
                   </ProtectedRoute>
                 } />
                 <Route path="/profile" element={
