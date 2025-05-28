@@ -48,6 +48,42 @@ export type Database = {
         }
         Relationships: []
       }
+      sleep_entries: {
+        Row: {
+          bedtime: string
+          created_at: string
+          date: string
+          hours: number
+          id: string
+          quality: number
+          updated_at: string
+          user_id: string
+          wake_time: string
+        }
+        Insert: {
+          bedtime: string
+          created_at?: string
+          date: string
+          hours: number
+          id?: string
+          quality: number
+          updated_at?: string
+          user_id: string
+          wake_time: string
+        }
+        Update: {
+          bedtime?: string
+          created_at?: string
+          date?: string
+          hours?: number
+          id?: string
+          quality?: number
+          updated_at?: string
+          user_id?: string
+          wake_time?: string
+        }
+        Relationships: []
+      }
       user_data: {
         Row: {
           created_at: string

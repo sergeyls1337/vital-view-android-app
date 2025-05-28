@@ -1,27 +1,20 @@
 
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
 import PageHeader from "@/components/PageHeader";
 import BottomNavigation from "@/components/BottomNavigation";
 import SleepQualityChart from "@/components/SleepQualityChart";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useSleepData } from "@/hooks/useSleepData";
 import { Moon, Sunrise, Clock, Calendar } from "lucide-react";
-
-interface SleepEntry {
-  id: string;
-  date: string;
-  hours: number;
-  quality: number;
-  bedtime: string;
-  wakeTime: string;
-}
 
 const SleepPage = () => {
   const { t } = useLanguage();
+  const { sleepEntries, loading, saveSleepEntry } = useSleepData();
+  
   const [sleepHours, setSleepHours] = useState<number>(7.5);
   const [sleepQuality, setSleepQuality] = useState<number>(8);
   const [bedtime, setBedtime] = useState<string>("23:30");
@@ -29,78 +22,12 @@ const SleepPage = () => {
   const [sleepDate, setSleepDate] = useState<string>(
     new Date().toISOString().split('T')[0]
   );
-  const [sleepData, setSleepData] = useState<Array<{day: string, hours: number, quality: number}>>([]);
-  const [sleepEntries, setSleepEntries] = useState<SleepEntry[]>([]);
 
-  // Load sleep data from local storage when component mounts
-  useEffect(() => {
-    const storedEntries = localStorage.getItem("sleepEntries");
-    if (storedEntries) {
-      const entries = JSON.parse(storedEntries) as SleepEntry[];
-      setSleepEntries(entries);
-      
-      // Convert the last 7 entries to chart data format
-      const chartData = entries
-        .slice(-7)
-        .map(entry => {
-          const date = new Date(entry.date);
-          return {
-            day: date.toLocaleDateString('en-US', { weekday: 'short' }),
-            hours: entry.hours,
-            quality: entry.quality
-          };
-        });
-      
-      setSleepData(chartData);
-      
-      // Set form values from the latest entry if it exists
-      if (entries.length > 0) {
-        const latestEntry = entries[entries.length - 1];
-        setSleepHours(latestEntry.hours);
-        setSleepQuality(latestEntry.quality);
-        setBedtime(latestEntry.bedtime);
-        setWakeTime(latestEntry.wakeTime);
-      }
-    } else {
-      // Fallback to demo data if no entries exist
-      setSleepData([
-        { day: "Mon", hours: 7.5, quality: 8 },
-        { day: "Tue", hours: 6.2, quality: 6 },
-        { day: "Wed", hours: 8.0, quality: 9 },
-        { day: "Thu", hours: 7.0, quality: 7 },
-        { day: "Fri", hours: 6.5, quality: 6 },
-        { day: "Sat", hours: 9.0, quality: 9 },
-        { day: "Sun", hours: 8.0, quality: 8 },
-      ]);
-    }
-  }, []);
-
-  const handleLogSleep = () => {
-    // Create a new sleep entry
-    const newEntry: SleepEntry = {
-      id: Date.now().toString(),
-      date: sleepDate,
-      hours: sleepHours,
-      quality: sleepQuality,
-      bedtime,
-      wakeTime,
-    };
-
-    // Add the new entry to the existing entries
-    const updatedEntries = [...sleepEntries, newEntry];
-    
-    // Sort entries by date
-    updatedEntries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    
-    // Update state
-    setSleepEntries(updatedEntries);
-    
-    // Save to localStorage
-    localStorage.setItem("sleepEntries", JSON.stringify(updatedEntries));
-    
-    // Update chart data with the last 7 entries
-    const chartData = updatedEntries
-      .slice(-7)
+  // Get chart data from the last 7 entries
+  const sleepData = useMemo(() => {
+    return sleepEntries
+      .slice(0, 7)
+      .reverse()
       .map(entry => {
         const date = new Date(entry.date);
         return {
@@ -109,9 +36,23 @@ const SleepPage = () => {
           quality: entry.quality
         };
       });
-    
-    setSleepData(chartData);
-    toast.success(t('sleep.dataSaved'));
+  }, [sleepEntries]);
+
+  const handleLogSleep = async () => {
+    const success = await saveSleepEntry({
+      date: sleepDate,
+      hours: sleepHours,
+      quality: sleepQuality,
+      bedtime,
+      wakeTime,
+    });
+
+    if (success) {
+      // Reset form to tomorrow's date
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      setSleepDate(tomorrow.toISOString().split('T')[0]);
+    }
   };
 
   const getAverageSleep = (): number => {
@@ -136,8 +77,23 @@ const SleepPage = () => {
 
   // Get the most recent entry
   const latestEntry = sleepEntries.length > 0 
-    ? sleepEntries[sleepEntries.length - 1] 
+    ? sleepEntries[0] 
     : { hours: 7.5, quality: 4, bedtime: "23:30", wakeTime: "07:00" };
+
+  if (loading) {
+    return (
+      <div className="pb-20 px-6 max-w-lg mx-auto">
+        <PageHeader 
+          title={t('navigation.sleep')} 
+          description={t('sleep.description')}
+        />
+        <div className="flex justify-center items-center h-64">
+          <div className="text-gray-500">Loading sleep data...</div>
+        </div>
+        <BottomNavigation />
+      </div>
+    );
+  }
 
   return (
     <div className="pb-20 px-6 max-w-lg mx-auto">
