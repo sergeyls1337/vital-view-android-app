@@ -9,12 +9,30 @@ export const useWaterReminder = () => {
   const [intervalMinutes, setIntervalMinutes] = useState(60);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Load reminder settings from localStorage on mount
+  useEffect(() => {
+    const savedReminder = localStorage.getItem('waterReminderSettings');
+    if (savedReminder) {
+      const settings = JSON.parse(savedReminder);
+      if (settings.isActive && settings.intervalMinutes) {
+        setIntervalMinutes(settings.intervalMinutes);
+        startReminder(settings.intervalMinutes);
+      }
+    }
+  }, []);
+
   const startReminder = (minutes: number) => {
     // Clear any existing reminder
     stopReminder();
     
     setIntervalMinutes(minutes);
     setIsReminderActive(true);
+    
+    // Save to localStorage
+    localStorage.setItem('waterReminderSettings', JSON.stringify({
+      isActive: true,
+      intervalMinutes: minutes
+    }));
     
     // Set up the interval
     intervalRef.current = setInterval(() => {
@@ -43,6 +61,13 @@ export const useWaterReminder = () => {
       intervalRef.current = null;
     }
     setIsReminderActive(false);
+    
+    // Update localStorage
+    localStorage.setItem('waterReminderSettings', JSON.stringify({
+      isActive: false,
+      intervalMinutes: intervalMinutes
+    }));
+    
     console.log('Water reminder stopped');
   };
 

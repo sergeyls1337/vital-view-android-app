@@ -1,8 +1,8 @@
 
 import { Minus, Plus, Droplets } from "lucide-react";
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import WaterAmountSelector from "./WaterAmountSelector";
 
 interface WaterIntakeControlProps {
   onWaterIntakeChange: (amount: number) => void;
@@ -38,7 +38,7 @@ const WaterIntakeControl = ({
         />
       </div>
       
-      <div className="flex items-center gap-4 mt-4">
+      <div className="flex items-center gap-4 mt-4 mb-4">
         <Button
           variant="outline"
           size="icon"
@@ -67,6 +67,8 @@ const WaterIntakeControl = ({
           <Plus className="h-5 w-5" />
         </Button>
       </div>
+      
+      <WaterAmountSelector onAddWater={handleAddWater} />
     </div>
   );
 };
