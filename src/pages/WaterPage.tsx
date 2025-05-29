@@ -1,17 +1,34 @@
 
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import PageHeader from "@/components/PageHeader";
 import BottomNavigation from "@/components/BottomNavigation";
 import WaterIntakeControl from "@/components/WaterIntakeControl";
+import WaterReminderDrawer from "@/components/WaterReminderDrawer";
 import { useWaterData } from "@/hooks/useWaterData";
+import { useWaterReminder } from "@/hooks/useWaterReminder";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { BellOff } from "lucide-react";
+import { useEffect } from "react";
 
 const WaterPage = () => {
   const { t } = useLanguage();
   const { currentIntake, dailyGoal, addWaterIntake, getTodayEntries, weeklyData } = useWaterData();
+  const { 
+    isReminderActive, 
+    intervalMinutes, 
+    startReminder, 
+    stopReminder, 
+    requestNotificationPermission 
+  } = useWaterReminder();
   
   const handleWaterIntakeChange = (amount: number) => {
     addWaterIntake(amount);
+  };
+
+  const handleSetReminder = async (minutes: number) => {
+    await requestNotificationPermission();
+    startReminder(minutes);
   };
   
   const todayEntries = getTodayEntries();
@@ -29,6 +46,38 @@ const WaterPage = () => {
           currentIntake={currentIntake}
           dailyGoal={dailyGoal}
         />
+      </Card>
+
+      <Card className="p-4 mb-6">
+        <h3 className="font-medium mb-3">{t('water.reminders')}</h3>
+        <div className="flex items-center justify-between">
+          <div>
+            {isReminderActive ? (
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                <span className="text-sm text-green-600">
+                  {t('water.reminderActive')} ({intervalMinutes} {t('water.minutes')})
+                </span>
+              </div>
+            ) : (
+              <span className="text-sm text-gray-500">{t('water.noReminder')}</span>
+            )}
+          </div>
+          <div className="flex gap-2">
+            {isReminderActive && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={stopReminder}
+                className="flex items-center gap-1"
+              >
+                <BellOff className="h-3 w-3" />
+                {t('water.stopReminder')}
+              </Button>
+            )}
+            <WaterReminderDrawer onSetReminder={handleSetReminder} />
+          </div>
+        </div>
       </Card>
       
       <Card className="p-5 mb-6">
