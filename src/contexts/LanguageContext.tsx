@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface LanguageContextProps {
@@ -6,11 +7,7 @@ interface LanguageContextProps {
   setLanguage: (lang: string) => void;
 }
 
-const LanguageContext = createContext<LanguageContextProps>({
-  language: 'en',
-  t: (key: string) => key,
-  setLanguage: () => {},
-});
+const LanguageContext = createContext<LanguageContextProps | undefined>(undefined);
 
 interface LanguageProviderProps {
   children: React.ReactNode;
@@ -31,6 +28,7 @@ const translations = {
     },
     dashboard: {
       welcome: "Welcome back!",
+      hello: "Hello",
       overview: "Overview",
       activity: "Activity",
       water: "Water",
@@ -38,6 +36,15 @@ const translations = {
       weight: "Weight",
       steps: "Steps",
       signOut: "Sign Out",
+      dailyGoal: "Daily Goal",
+      todaysActivity: "Today's Activity",
+      calories: "Calories",
+      liters: "L",
+      hours: "h",
+      current: "Current",
+      goal: "Goal",
+      trackWeight: "Track Weight",
+      todaysTips: "Today's Tips",
     },
     activity: {
       noActivities: "No activities tracked yet.",
@@ -198,6 +205,14 @@ const translations = {
       deleteAccount: "Delete Account",
       confirmDeleteAccount: "Are you sure you want to delete your account? This action cannot be undone.",
       deleteMyAccount: "Delete My Account",
+      settings: "Settings",
+      light: "Light",
+      dark: "Dark",
+      system: "System",
+      contactDeveloper: "Contact Developer",
+    },
+    navigation: {
+      weight: "Weight",
     },
     auth: {
       signUp: "Sign Up",
@@ -231,6 +246,7 @@ const translations = {
     },
     dashboard: {
       welcome: "З поверненням!",
+      hello: "Привіт",
       overview: "Огляд",
       activity: "Активність",
       water: "Вода",
@@ -238,8 +254,17 @@ const translations = {
       weight: "Вага",
       steps: "Кроки",
       signOut: "Вийти",
+      dailyGoal: "Денна ціль",
+      todaysActivity: "Сьогоднішня активність",
+      calories: "Калорії",
+      liters: "Л",
+      hours: "г",
+      current: "Поточна",
+      goal: "Ціль",
+      trackWeight: "Відстежувати вагу",
+      todaysTips: "Поради на сьогодні",
     },
-     activity: {
+    activity: {
       noActivities: "Поки що немає відстежених активностей.",
       addActivity: "Додати активність",
       editActivity: "Редагувати активність",
@@ -400,6 +425,14 @@ const translations = {
       deleteAccount: "Видалити аккаунт",
       confirmDeleteAccount: "Ви впевнені, що хочете видалити свій аккаунт? Цю дію не можна буде скасувати.",
       deleteMyAccount: "Видалити мій аккаунт",
+      settings: "Налаштування",
+      light: "Світла",
+      dark: "Темна",
+      system: "Системна",
+      contactDeveloper: "Зв'язатися з розробником",
+    },
+    navigation: {
+      weight: "Вага",
     },
     auth: {
       signUp: "Зареєструватися",
@@ -433,26 +466,44 @@ const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) => {
   }, [language]);
 
   const t = (key: string, args: Record<string, string | number> = {}) => {
-    let translation = translations[language as keyof typeof translations]?.[
-      key.split('.')[0] as keyof (typeof translations)['en']
-    ]?.[key.split('.')[1] as string] || key;
-
-    for (const argKey in args) {
-      translation = translation.replace(`{${argKey}}`, String(args[argKey]));
+    const keys = key.split('.');
+    let translation: any = translations[language as keyof typeof translations];
+    
+    for (const k of keys) {
+      translation = translation?.[k];
+    }
+    
+    if (!translation) {
+      return key;
     }
 
-    return translation;
+    let result = translation;
+    for (const argKey in args) {
+      result = result.replace(`{${argKey}}`, String(args[argKey]));
+    }
+
+    return result;
+  };
+
+  const contextValue: LanguageContextProps = {
+    language,
+    t,
+    setLanguage,
   };
 
   return (
-    <LanguageContext.Provider value={{ language, t, setLanguage }}>
+    <LanguageContext.Provider value={contextValue}>
       {children}
     </LanguageContext.Provider>
   );
 };
 
 const useLanguage = () => {
-  return useContext(LanguageContext);
+  const context = useContext(LanguageContext);
+  if (context === undefined) {
+    throw new Error('useLanguage must be used within a LanguageProvider');
+  }
+  return context;
 };
 
 export { LanguageProvider, useLanguage };
