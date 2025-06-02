@@ -11,15 +11,18 @@ import { useWaterData } from "@/hooks/useWaterData";
 import { useSleepData } from "@/hooks/useSleepData";
 import { useWeightData } from "@/hooks/useWeightData";
 import { 
-  CalendarDays, 
-  Clock, 
-  TrendingUp, 
-  Award,
   Activity,
   Droplets,
   Moon,
-  Scale
+  Scale,
+  TrendingUp,
+  TrendingDown
 } from "lucide-react";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
 import {
   LineChart,
   Line,
@@ -28,7 +31,6 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
   ResponsiveContainer,
   PieChart,
   Pie,
@@ -81,16 +83,52 @@ const StatisticsPage = () => {
     { name: t('statistics.swimming'), value: 15, color: '#8b5cf6' }
   ];
 
-  const StatCard = ({ title, value, subtitle, icon: Icon, color }: any) => (
-    <Card>
+  const chartConfig = {
+    steps: {
+      label: t('dashboard.steps'),
+      color: "hsl(var(--chart-1))",
+    },
+    calories: {
+      label: t('dashboard.calories'),
+      color: "hsl(var(--chart-2))",
+    },
+    hours: {
+      label: t('dashboard.hours'),
+      color: "hsl(var(--chart-3))",
+    },
+    quality: {
+      label: t('statistics.qualityScale'),
+      color: "hsl(var(--chart-4))",
+    },
+    amount: {
+      label: t('statistics.waterIntake'),
+      color: "hsl(var(--chart-5))",
+    },
+    weight: {
+      label: t('dashboard.weight'),
+      color: "hsl(var(--chart-1))",
+    },
+  };
+
+  const StatCard = ({ title, value, subtitle, icon: Icon, color, trend }: any) => (
+    <Card className="hover-scale transition-all duration-200">
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-muted-foreground">{title}</p>
             <p className="text-2xl font-bold">{value}</p>
-            <p className="text-xs text-muted-foreground">{subtitle}</p>
+            <div className="flex items-center gap-1">
+              <p className="text-xs text-muted-foreground">{subtitle}</p>
+              {trend && (
+                trend > 0 ? (
+                  <TrendingUp className="h-3 w-3 text-green-500" />
+                ) : (
+                  <TrendingDown className="h-3 w-3 text-red-500" />
+                )
+              )}
+            </div>
           </div>
-          <div className={`p-2 rounded-lg ${color}`}>
+          <div className={`p-3 rounded-xl ${color} shadow-lg`}>
             <Icon className="h-6 w-6 text-white" />
           </div>
         </div>
@@ -99,7 +137,7 @@ const StatisticsPage = () => {
   );
 
   return (
-    <div className="pb-20 px-6 max-w-4xl mx-auto">
+    <div className="pb-20 px-6 max-w-4xl mx-auto animate-fade-in">
       <PageHeader 
         title={t('statistics.title')} 
         description={t('statistics.description')}
@@ -113,7 +151,7 @@ const StatisticsPage = () => {
             variant={selectedPeriod === period ? "default" : "outline"}
             size="sm"
             onClick={() => setSelectedPeriod(period)}
-            className="capitalize"
+            className="capitalize hover-scale"
           >
             {t(`statistics.${period}`)}
           </Button>
@@ -127,28 +165,32 @@ const StatisticsPage = () => {
           value={totalActivities}
           subtitle={t('statistics.allTime')}
           icon={Activity}
-          color="bg-blue-500"
+          color="bg-gradient-to-br from-blue-500 to-blue-600"
+          trend={1}
         />
         <StatCard
           title={t('statistics.waterIntake')}
           value={`${(totalWaterIntake / 1000).toFixed(1)}L`}
           subtitle={t('statistics.thisWeek')}
           icon={Droplets}
-          color="bg-cyan-500"
+          color="bg-gradient-to-br from-cyan-500 to-cyan-600"
+          trend={1}
         />
         <StatCard
           title={t('statistics.avgSleep')}
           value={`${averageSleepHours.toFixed(1)}h`}
           subtitle={t('statistics.perNight')}
           icon={Moon}
-          color="bg-purple-500"
+          color="bg-gradient-to-br from-purple-500 to-purple-600"
+          trend={averageSleepHours >= 7 ? 1 : -1}
         />
         <StatCard
           title={t('statistics.weightChange')}
           value={`${weightChange > 0 ? '+' : ''}${weightChange.toFixed(1)}kg`}
           subtitle={t('statistics.total')}
           icon={Scale}
-          color={weightChange < 0 ? "bg-green-500" : "bg-red-500"}
+          color={weightChange < 0 ? "bg-gradient-to-br from-green-500 to-green-600" : "bg-gradient-to-br from-red-500 to-red-600"}
+          trend={weightChange < 0 ? 1 : -1}
         />
       </div>
 
@@ -161,40 +203,38 @@ const StatisticsPage = () => {
         </TabsList>
 
         <TabsContent value="activity" className="space-y-4">
-          <Card>
+          <Card className="hover-scale transition-all duration-200">
             <CardHeader>
               <CardTitle>{t('statistics.weeklyActivityTrends')}</CardTitle>
               <CardDescription>{t('statistics.stepsAndCalories')}</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={activityTrendData}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="day" />
-                    <YAxis />
-                    <Tooltip />
-                    <Line 
-                      type="monotone" 
-                      dataKey="steps" 
-                      stroke="#3b82f6" 
-                      strokeWidth={2}
-                      name={t('dashboard.steps')}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="calories" 
-                      stroke="#10b981" 
-                      strokeWidth={2}
-                      name={t('dashboard.calories')}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
+              <ChartContainer config={chartConfig} className="h-72">
+                <LineChart data={activityTrendData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="day" />
+                  <YAxis />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Line 
+                    type="monotone" 
+                    dataKey="steps" 
+                    stroke="var(--color-steps)" 
+                    strokeWidth={3}
+                    dot={{ fill: "var(--color-steps)", strokeWidth: 2, r: 4 }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="calories" 
+                    stroke="var(--color-calories)" 
+                    strokeWidth={3}
+                    dot={{ fill: "var(--color-calories)", strokeWidth: 2, r: 4 }}
+                  />
+                </LineChart>
+              </ChartContainer>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="hover-scale transition-all duration-200">
             <CardHeader>
               <CardTitle>{t('statistics.activityDistribution')}</CardTitle>
               <CardDescription>{t('statistics.favoriteActivities')}</CardDescription>
@@ -207,7 +247,7 @@ const StatisticsPage = () => {
                       data={activityDistribution}
                       cx="50%"
                       cy="50%"
-                      outerRadius={80}
+                      outerRadius={100}
                       fill="#8884d8"
                       dataKey="value"
                       label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
@@ -216,7 +256,7 @@ const StatisticsPage = () => {
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip />
+                    <ChartTooltip content={<ChartTooltipContent />} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -225,86 +265,84 @@ const StatisticsPage = () => {
         </TabsContent>
 
         <TabsContent value="water" className="space-y-4">
-          <Card>
+          <Card className="hover-scale transition-all duration-200">
             <CardHeader>
               <CardTitle>{t('statistics.waterIntakeTrends')}</CardTitle>
               <CardDescription>{t('statistics.dailyWaterConsumption')}</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={waterTrendData}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="day" />
-                    <YAxis />
-                    <Tooltip formatter={(value) => [`${value}ml`, t('statistics.waterIntake')]} />
-                    <Bar dataKey="amount" fill="#06b6d4" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+              <ChartContainer config={chartConfig} className="h-72">
+                <BarChart data={waterTrendData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="day" />
+                  <YAxis />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Bar 
+                    dataKey="amount" 
+                    fill="var(--color-amount)" 
+                    radius={[6, 6, 0, 0]} 
+                  />
+                </BarChart>
+              </ChartContainer>
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="sleep" className="space-y-4">
-          <Card>
+          <Card className="hover-scale transition-all duration-200">
             <CardHeader>
               <CardTitle>{t('statistics.sleepPatterns')}</CardTitle>
               <CardDescription>{t('statistics.sleepDurationQuality')}</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={sleepTrendData}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Line 
-                      type="monotone" 
-                      dataKey="hours" 
-                      stroke="#8b5cf6" 
-                      strokeWidth={2}
-                      name={t('dashboard.hours')}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="quality" 
-                      stroke="#14b8a6" 
-                      strokeWidth={2}
-                      name={t('statistics.qualityScale')}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
+              <ChartContainer config={chartConfig} className="h-72">
+                <LineChart data={sleepTrendData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Line 
+                    type="monotone" 
+                    dataKey="hours" 
+                    stroke="var(--color-hours)" 
+                    strokeWidth={3}
+                    dot={{ fill: "var(--color-hours)", strokeWidth: 2, r: 4 }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="quality" 
+                    stroke="var(--color-quality)" 
+                    strokeWidth={3}
+                    dot={{ fill: "var(--color-quality)", strokeWidth: 2, r: 4 }}
+                  />
+                </LineChart>
+              </ChartContainer>
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="weight" className="space-y-4">
-          <Card>
+          <Card className="hover-scale transition-all duration-200">
             <CardHeader>
               <CardTitle>{t('statistics.weightProgress')}</CardTitle>
               <CardDescription>{t('statistics.weightJourney')}</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={weightEntries}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="date" />
-                    <YAxis domain={['dataMin - 1', 'dataMax + 1']} />
-                    <Tooltip formatter={(value) => [`${value} kg`, t('dashboard.weight')]} />
-                    <Line 
-                      type="monotone" 
-                      dataKey="weight" 
-                      stroke="#f59e0b" 
-                      strokeWidth={2}
-                      dot={{ fill: "#f59e0b", r: 4 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
+              <ChartContainer config={chartConfig} className="h-72">
+                <LineChart data={weightEntries}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="date" />
+                  <YAxis domain={['dataMin - 1', 'dataMax + 1']} />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Line 
+                    type="monotone" 
+                    dataKey="weight" 
+                    stroke="var(--color-weight)" 
+                    strokeWidth={3}
+                    dot={{ fill: "var(--color-weight)", strokeWidth: 2, r: 6 }}
+                  />
+                </LineChart>
+              </ChartContainer>
             </CardContent>
           </Card>
         </TabsContent>
