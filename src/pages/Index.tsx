@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Activity, Droplets, Moon, Scale, Settings } from "lucide-react";
@@ -14,6 +13,7 @@ import { userService } from "@/services/userService";
 import { useWaterData } from "@/hooks/useWaterData";
 import { useActivityData } from "@/hooks/useActivityData";
 import { useSleepData } from "@/hooks/useSleepData";
+import { useHealthTips } from "@/hooks/useHealthTips";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -62,6 +62,8 @@ const Index = () => {
 
   const currentWeight = getCurrentWeight();
   const goalWeight = 70;
+
+  const healthTips = useHealthTips(weightData);
 
   return (
     <div className="pb-20 max-w-lg mx-auto">
@@ -201,18 +203,12 @@ const Index = () => {
             <h3 className="font-medium">{t('dashboard.todaysTips')}</h3>
           </div>
           <ul className="space-y-2">
-            <li className="flex items-start gap-2">
-              <div className="min-w-5 min-h-5 rounded-full bg-health-green mt-1"></div>
-              <p className="text-sm">Try to drink 2 more glasses of water before dinner</p>
-            </li>
-            <li className="flex items-start gap-2">
-              <div className="min-w-5 min-h-5 rounded-full bg-health-blue mt-1"></div>
-              <p className="text-sm">You're {Math.max(0, 10000 - (currentActivity.steps || 0)).toLocaleString()} steps away from your daily goal</p>
-            </li>
-            <li className="flex items-start gap-2">
-              <div className="min-w-5 min-h-5 rounded-full bg-health-teal mt-1"></div>
-              <p className="text-sm">Try to get 8 hours of sleep tonight</p>
-            </li>
+            {healthTips.map((tip) => (
+              <li key={tip.id} className="flex items-start gap-2">
+                <div className={`min-w-5 min-h-5 rounded-full ${tip.color} mt-1`}></div>
+                <p className="text-sm">{tip.text}</p>
+              </li>
+            ))}
           </ul>
         </Card>
       </div>

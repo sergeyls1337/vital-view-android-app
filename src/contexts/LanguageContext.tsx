@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface LanguageContextProps {
@@ -295,6 +294,38 @@ const translations = {
       invalidEmail: "Invalid email address",
       signOut: "Sign Out",
     },
+    tips: {
+      water: {
+        low: "Try to drink {glasses} more glasses of water before dinner",
+        good: "Great job on staying hydrated! Keep it up!",
+        excellent: "Perfect hydration level! You're doing amazing!",
+      },
+      steps: {
+        start: "Take a 10-minute walk to get your steps going",
+        progress: "You're {steps} steps away from your daily goal",
+        close: "Almost there! Just {steps} more steps to reach your goal",
+        achieved: "Congratulations! You've reached your step goal!",
+        exceed: "Amazing! You've exceeded your daily step goal!",
+      },
+      sleep: {
+        short: "Try to get at least 7-8 hours of sleep tonight",
+        good: "Great sleep! Try to maintain this schedule",
+        long: "You got plenty of sleep! Keep up the good routine",
+      },
+      weight: {
+        track: "Log your weight to track your progress",
+        goal: "You're {amount}kg away from your goal weight",
+        maintain: "Great job maintaining your target weight!",
+      },
+      general: {
+        consistency: "Consistency is key - track your metrics daily",
+        balance: "Remember to balance all aspects of your health",
+        celebrate: "Celebrate small wins on your health journey",
+        hydrate: "Don't forget to drink water throughout the day",
+        move: "Take short breaks to move around every hour",
+        rest: "Quality sleep is essential for recovery",
+      },
+    },
   },
   uk: {
     common: {
@@ -576,6 +607,38 @@ const translations = {
       passwordMatch: "Паролі повинні збігатися",
       invalidEmail: "Недійсна адреса електронної пошти",
       signOut: "Вийти",
+    },
+    tips: {
+      water: {
+        low: "Спробуйте випити ще {glasses} склянок води до вечері",
+        good: "Чудова робота з підтримкою гідратації! Продовжуйте!",
+        excellent: "Ідеальний рівень гідратації! Ви чудово справляєтесь!",
+      },
+      steps: {
+        start: "Прогуляйтеся 10 хвилин, щоб почати набирати кроки",
+        progress: "Вам залишилося {steps} кроків до денної цілі",
+        close: "Майже готово! Ще лише {steps} кроків до досягнення цілі",
+        achieved: "Вітаємо! Ви досягли своєї цілі за кроками!",
+        exceed: "Дивовижно! Ви перевищили свою денну ціль за кроками!",
+      },
+      sleep: {
+        short: "Спробуйте спати принаймні 7-8 годин сьогодні вночі",
+        good: "Чудовий сон! Спробуйте підтримувати цей розпорядок",
+        long: "Ви добре виспалися! Продовжуйте цю гарну рутину",
+      },
+      weight: {
+        track: "Записуйте свою вагу, щоб відстежувати прогрес",
+        goal: "Вам залишилося {amount}кг до цільової ваги",
+        maintain: "Чудова робота з підтримкою цільової ваги!",
+      },
+      general: {
+        consistency: "Послідовність - це ключ, відстежуйте свої показники щодня",
+        balance: "Пам'ятайте про баланс усіх аспектів вашого здоров'я",
+        celebrate: "Святкуйте маленькі перемоги у вашій подорожі до здоров'я",
+        hydrate: "Не забувайте пити воду протягом дня",
+        move: "Робіть короткі перерви для руху кожну годину",
+        rest: "Якісний сон важливий для відновлення",
+      },
     },
   },
 };
