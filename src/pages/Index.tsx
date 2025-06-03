@@ -17,6 +17,7 @@ const Index = () => {
   const { user } = useAuth();
   const [userProfile, setUserProfile] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { currentIntake, dailyGoal } = useWaterData();
   const { currentActivity, stepsProgress } = useActivityData();
   const { sleepEntries } = useSleepData();
@@ -25,9 +26,23 @@ const Index = () => {
   const [weightData, setWeightData] = useState([]);
   
   useEffect(() => {
-    if (user) {
-      userService.getCurrentUser().then(setUserProfile);
-    }
+    const loadData = async () => {
+      if (user) {
+        try {
+          const profile = await userService.getCurrentUser();
+          setUserProfile(profile);
+        } catch (error) {
+          console.error('Error loading user profile:', error);
+        }
+      }
+      
+      // Simulate loading time for better UX
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 1000);
+    };
+    
+    loadData();
   }, [user]);
 
   useEffect(() => {
@@ -83,6 +98,7 @@ const Index = () => {
           waterProgress={waterProgress}
           sleepHours={sleepHours}
           sleepProgress={sleepProgress}
+          isLoading={isLoading}
         />
         
         <WeightTrackingCard
