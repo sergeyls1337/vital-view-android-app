@@ -7,6 +7,7 @@ export const useWaterReminder = () => {
   const { t } = useLanguage();
   const [isReminderActive, setIsReminderActive] = useState(false);
   const [intervalMinutes, setIntervalMinutes] = useState(60);
+  const [nextReminderTime, setNextReminderTime] = useState<Date | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load reminder settings from localStorage on mount
@@ -21,6 +22,12 @@ export const useWaterReminder = () => {
     }
   }, []);
 
+  const calculateNextReminderTime = (minutes: number) => {
+    const next = new Date();
+    next.setMinutes(next.getMinutes() + minutes);
+    return next;
+  };
+
   const startReminder = (minutes: number) => {
     // Clear any existing reminder
     stopReminder();
@@ -28,10 +35,14 @@ export const useWaterReminder = () => {
     setIntervalMinutes(minutes);
     setIsReminderActive(true);
     
+    const nextTime = calculateNextReminderTime(minutes);
+    setNextReminderTime(nextTime);
+    
     // Save to localStorage
     localStorage.setItem('waterReminderSettings', JSON.stringify({
       isActive: true,
-      intervalMinutes: minutes
+      intervalMinutes: minutes,
+      nextReminderTime: nextTime.toISOString()
     }));
     
     // Set up the interval
@@ -41,16 +52,36 @@ export const useWaterReminder = () => {
         new Notification(t('water.reminderNotificationTitle'), {
           body: t('water.reminderNotificationBody'),
           icon: '/favicon.ico',
-          badge: '/favicon.ico'
+          badge: '/favicon.ico',
+          tag: 'water-reminder'
         });
       }
       
       // Show toast notification as fallback
       toast({
-        title: t('water.reminderNotificationTitle'),
+        title: "💧 " + t('water.reminderNotificationTitle'),
         description: t('water.reminderNotificationBody'),
+        duration: 5000,
       });
+      
+      // Update next reminder time
+      const nextTime = calculateNextReminderTime(minutes);
+      setNextReminderTime(nextTime);
+      
+      // Update localStorage
+      localStorage.setItem('waterReminderSettings', JSON.stringify({
+        isActive: true,
+        intervalMinutes: minutes,
+        nextReminderTime: nextTime.toISOString()
+      }));
     }, minutes * 60 * 1000);
+    
+    // Show confirmation toast
+    toast({
+      title: "⏰ Reminder Set",
+      description: `You'll be reminded every ${minutes} minutes to drink water`,
+      duration: 3000,
+    });
     
     console.log(`Water reminder set for every ${minutes} minutes`);
   };
@@ -61,12 +92,19 @@ export const useWaterReminder = () => {
       intervalRef.current = null;
     }
     setIsReminderActive(false);
+    setNextReminderTime(null);
     
     // Update localStorage
     localStorage.setItem('waterReminderSettings', JSON.stringify({
       isActive: false,
       intervalMinutes: intervalMinutes
     }));
+    
+    toast({
+      title: "🔕 Reminder Stopped",
+      description: "Water reminders have been disabled",
+      duration: 2000,
+    });
     
     console.log('Water reminder stopped');
   };
@@ -77,6 +115,20 @@ export const useWaterReminder = () => {
       return permission === 'granted';
     }
     return false;
+  };
+
+  const getTimeUntilNextReminder = () => {
+    if (!nextReminderTime || !isReminderActive) return null;
+    
+    const now = new Date();
+    const timeDiff = nextReminderTime.getTime() - now.getTime();
+    
+    if (timeDiff <= 0) return null;
+    
+    const minutes = Math.floor(timeDiff / (1000 * 60));
+    const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+    
+    return { minutes, seconds };
   };
 
   // Clean up interval on component unmount
@@ -91,8 +143,10 @@ export const useWaterReminder = () => {
   return {
     isReminderActive,
     intervalMinutes,
+    nextReminderTime,
     startReminder,
     stopReminder,
-    requestNotificationPermission
+    requestNotificationPermission,
+    getTimeUntilNextReminder
   };
 };

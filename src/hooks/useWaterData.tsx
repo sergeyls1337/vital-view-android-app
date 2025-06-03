@@ -15,6 +15,8 @@ interface WaterData {
   dailyGoal: number;
   entries: WaterEntry[];
   weeklyData: { day: string; amount: number }[];
+  streak: number;
+  averageDaily: number;
 }
 
 export const useWaterData = () => {
@@ -23,7 +25,9 @@ export const useWaterData = () => {
     currentIntake: 0,
     dailyGoal: 2000,
     entries: [],
-    weeklyData: []
+    weeklyData: [],
+    streak: 0,
+    averageDaily: 0
   });
 
   useEffect(() => {
@@ -33,14 +37,20 @@ export const useWaterData = () => {
       try {
         const userData = await dataService.getUserData(user.id);
         if (userData.waterData) {
-          setWaterData(userData.waterData);
+          setWaterData({
+            ...userData.waterData,
+            streak: calculateStreak(userData.waterData.weeklyData || []),
+            averageDaily: calculateAverageDaily(userData.waterData.weeklyData || [])
+          });
         } else {
           // Initialize with default data for new users
           const initialData = {
             currentIntake: 0,
             dailyGoal: 2000,
             entries: [],
-            weeklyData: generateWeeklyData()
+            weeklyData: generateWeeklyData(),
+            streak: 0,
+            averageDaily: 0
           };
           setWaterData(initialData);
           await saveWaterData(initialData);
@@ -76,6 +86,33 @@ export const useWaterData = () => {
     }));
   };
 
+  const calculateStreak = (weeklyData: { day: string; amount: number }[]) => {
+    if (!weeklyData.length) return 0;
+    
+    let streak = 0;
+    const today = new Date().getDay();
+    const todayIndex = today === 0 ? 6 : today - 1;
+    
+    for (let i = todayIndex; i >= 0; i--) {
+      if (weeklyData[i]?.amount >= 2000) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+    
+    return streak;
+  };
+
+  const calculateAverageDaily = (weeklyData: { day: string; amount: number }[]) => {
+    if (!weeklyData.length) return 0;
+    
+    const totalAmount = weeklyData.reduce((sum, day) => sum + (day.amount || 0), 0);
+    const daysWithData = weeklyData.filter(day => day.amount > 0).length;
+    
+    return daysWithData > 0 ? Math.round(totalAmount / daysWithData) : 0;
+  };
+
   const addWaterIntake = async (amount: number) => {
     const newIntake = Math.max(0, waterData.currentIntake + amount);
     const currentTime = new Date().toLocaleTimeString('en-US', { 
@@ -94,9 +131,22 @@ export const useWaterData = () => {
       };
       newEntries.push(newEntry);
       
+      // Show motivational toast based on progress
+      const progress = (newIntake / waterData.dailyGoal) * 100;
+      let toastMessage = `Added ${amount}ml to your daily intake`;
+      
+      if (progress >= 100) {
+        toastMessage = "🎉 Daily goal achieved! Great job!";
+      } else if (progress >= 75) {
+        toastMessage = `${amount}ml added! Almost there!`;
+      } else if (progress >= 50) {
+        toastMessage = `${amount}ml added! Halfway to your goal!`;
+      }
+      
       toast({
-        title: "Water added!",
-        description: `Added ${amount}ml to your daily intake`,
+        title: "💧 Water added!",
+        description: toastMessage,
+        duration: 2000,
       });
     } else if (amount < 0 && newEntries.length > 0) {
       const removedEntry = newEntries.pop();
@@ -104,6 +154,7 @@ export const useWaterData = () => {
         toast({
           title: "Water removed",
           description: `Removed ${Math.abs(amount)}ml from your daily intake`,
+          duration: 2000,
         });
       }
     }
@@ -119,7 +170,9 @@ export const useWaterData = () => {
       ...waterData,
       currentIntake: newIntake,
       entries: newEntries,
-      weeklyData: newWeeklyData
+      weeklyData: newWeeklyData,
+      streak: calculateStreak(newWeeklyData),
+      averageDaily: calculateAverageDaily(newWeeklyData)
     };
 
     setWaterData(updatedData);
