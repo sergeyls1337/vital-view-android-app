@@ -7,13 +7,18 @@ import { Label } from "@/components/ui/label";
 import PageHeader from "@/components/PageHeader";
 import BottomNavigation from "@/components/BottomNavigation";
 import SleepQualityChart from "@/components/SleepQualityChart";
+import SleepInsightsCard from "@/components/sleep/SleepInsightsCard";
+import SleepQualitySelector from "@/components/sleep/SleepQualitySelector";
+import SleepGoalCard from "@/components/sleep/SleepGoalCard";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSleepData } from "@/hooks/useSleepData";
-import { Moon, Sunrise, Clock, Calendar } from "lucide-react";
+import { useSleepGoal } from "@/hooks/useSleepGoal";
+import { Moon, Sunrise, Clock, Calendar, Sparkles } from "lucide-react";
 
 const SleepPage = () => {
   const { t } = useLanguage();
   const { sleepEntries, loading, saveSleepEntry } = useSleepData();
+  const { sleepGoal, updateSleepGoal } = useSleepGoal();
   
   const [sleepHours, setSleepHours] = useState<number>(7.5);
   const [sleepQuality, setSleepQuality] = useState<number>(8);
@@ -113,8 +118,25 @@ const SleepPage = () => {
         description={t('sleep.description')}
       />
       
-      <Card className="p-5 mb-6">
-        <h3 className="font-medium mb-4">{t('sleep.lastNightSleep')}</h3>
+      {/* Sleep Goal Card */}
+      <SleepGoalCard
+        currentHours={latestEntry.hours}
+        goalHours={sleepGoal}
+        onGoalUpdate={updateSleepGoal}
+      />
+
+      {/* Sleep Insights */}
+      {sleepEntries.length >= 3 && (
+        <SleepInsightsCard sleepEntries={sleepEntries} />
+      )}
+      
+      <Card className="p-5 mb-6 bg-gradient-to-br from-indigo-50 to-purple-50">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-medium text-indigo-900">{t('sleep.lastNightSleep')}</h3>
+          <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
+            <Sparkles className="text-indigo-600 h-4 w-4" />
+          </div>
+        </div>
         
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center">
@@ -144,18 +166,18 @@ const SleepPage = () => {
         </div>
         
         <div className="grid grid-cols-2 gap-4">
-          <div className="border border-gray-100 rounded-lg p-3 flex items-center">
-            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mr-3">
-              <Moon className="text-gray-600 h-5 w-5" />
+          <div className="border border-indigo-100 rounded-lg p-3 flex items-center bg-white/60">
+            <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center mr-3">
+              <Moon className="text-indigo-600 h-5 w-5" />
             </div>
             <div>
               <p className="text-xs text-gray-500">{t('sleep.bedtime')}</p>
               <p className="font-medium">{latestEntry.bedtime}</p>
             </div>
           </div>
-          <div className="border border-gray-100 rounded-lg p-3 flex items-center">
-            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mr-3">
-              <Sunrise className="text-gray-600 h-5 w-5" />
+          <div className="border border-indigo-100 rounded-lg p-3 flex items-center bg-white/60">
+            <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center mr-3">
+              <Sunrise className="text-indigo-600 h-5 w-5" />
             </div>
             <div>
               <p className="text-xs text-gray-500">{t('sleep.wakeUp')}</p>
@@ -207,8 +229,8 @@ const SleepPage = () => {
         </div>
       </Card>
       
-      <Card className="p-5 mb-6">
-        <h3 className="font-medium mb-4">{t('sleep.logTonightSleep')}</h3>
+      <Card className="p-5 mb-6 bg-gradient-to-br from-purple-50 to-pink-50">
+        <h3 className="font-medium mb-4 text-purple-900">{t('sleep.logTonightSleep')}</h3>
         <div className="space-y-4">
           <div>
             <Label htmlFor="sleepDate">{t('sleep.date')}</Label>
@@ -219,6 +241,7 @@ const SleepPage = () => {
                 type="date"
                 value={sleepDate}
                 onChange={(e) => setSleepDate(e.target.value)}
+                className="bg-white"
               />
             </div>
           </div>
@@ -235,29 +258,18 @@ const SleepPage = () => {
                 max="24"
                 value={sleepHours || ''}
                 onChange={(e) => setSleepHours(parseFloat(e.target.value) || 0)}
+                className="bg-white"
               />
             </div>
           </div>
           
           <div>
             <Label htmlFor="sleepQuality">{t('sleep.sleepQuality')}</Label>
-            <Input
-              id="sleepQuality"
-              type="range"
-              min="1"
-              max="10"
-              step="1"
-              value={sleepQuality}
-              onChange={(e) => setSleepQuality(parseInt(e.target.value))}
-              className="mt-1"
-            />
-            <div className="flex justify-between text-xs text-gray-500 mt-1">
-              <span>{t('sleep.poor')}</span>
-              <span>{t('sleep.average')}</span>
-              <span>{t('sleep.excellent')}</span>
-            </div>
-            <div className="text-center text-sm font-medium mt-1">
-              {sleepQuality}/10
+            <div className="mt-3">
+              <SleepQualitySelector
+                value={sleepQuality}
+                onChange={setSleepQuality}
+              />
             </div>
           </div>
           
@@ -269,7 +281,7 @@ const SleepPage = () => {
                 type="time"
                 value={bedtime}
                 onChange={(e) => setBedtime(e.target.value)}
-                className="mt-1"
+                className="mt-1 bg-white"
               />
             </div>
             <div>
@@ -279,15 +291,16 @@ const SleepPage = () => {
                 type="time"
                 value={wakeTime}
                 onChange={(e) => setWakeTime(e.target.value)}
-                className="mt-1"
+                className="mt-1 bg-white"
               />
             </div>
           </div>
           
           <Button
-            className="w-full bg-health-purple hover:bg-purple-600"
+            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transform transition-all duration-200 hover:scale-105"
             onClick={handleLogSleep}
           >
+            <Moon className="h-4 w-4 mr-2" />
             {t('sleep.saveSleepData')}
           </Button>
         </div>

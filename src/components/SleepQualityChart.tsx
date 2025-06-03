@@ -32,16 +32,16 @@ const SleepQualityChart = ({ data }: SleepQualityChartProps) => {
             bottom: 0,
           }}
         >
-          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
           <XAxis 
             dataKey="day" 
-            tick={{ fontSize: 12 }}
+            tick={{ fontSize: 12, fill: '#6b7280' }}
             axisLine={false}
             tickLine={false}
           />
           <YAxis 
             domain={[0, 10]}
-            tick={{ fontSize: 12 }} 
+            tick={{ fontSize: 12, fill: '#6b7280' }} 
             axisLine={false}
             tickLine={false}
             width={30}
@@ -50,26 +50,38 @@ const SleepQualityChart = ({ data }: SleepQualityChartProps) => {
             contentStyle={{ 
               backgroundColor: "white", 
               border: "none", 
-              borderRadius: "8px",
-              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)"
+              borderRadius: "12px",
+              boxShadow: "0 8px 24px rgba(0, 0, 0, 0.12)",
+              padding: "12px"
             }}
             formatter={(value: number, name: string) => {
               if (name === "hours") return [`${value} hours`, "Sleep Duration"];
               return [`${value}/10`, "Sleep Quality"];
             }}
+            labelStyle={{ color: '#374151', fontWeight: 'medium' }}
           />
           <Bar 
             dataKey="hours" 
-            fill="#8b5cf6" 
-            radius={[4, 4, 0, 0]} 
-            barSize={30}
+            fill="url(#purpleGradient)" 
+            radius={[6, 6, 0, 0]} 
+            barSize={28}
           />
           <Bar 
             dataKey="quality" 
-            fill="#14b8a6" 
-            radius={[4, 4, 0, 0]} 
-            barSize={30}
+            fill="url(#tealGradient)" 
+            radius={[6, 6, 0, 0]} 
+            barSize={28}
           />
+          <defs>
+            <linearGradient id="purpleGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#a855f7" />
+              <stop offset="100%" stopColor="#8b5cf6" />
+            </linearGradient>
+            <linearGradient id="tealGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#06b6d4" />
+              <stop offset="100%" stopColor="#14b8a6" />
+            </linearGradient>
+          </defs>
         </BarChart>
       </ResponsiveContainer>
     </div>
