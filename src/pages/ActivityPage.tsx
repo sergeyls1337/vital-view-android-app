@@ -11,10 +11,11 @@ import AddActivityDialog from "@/components/activity/AddActivityDialog";
 import SetGoalDialog from "@/components/activity/SetGoalDialog";
 import ActivityHistoryDialog from "@/components/activity/ActivityHistoryDialog";
 import RecentActivitiesList from "@/components/activity/RecentActivitiesList";
+import ActivityTypeSelector from "@/components/activity/ActivityTypeSelector";
 import { useActivityData } from "@/hooks/useActivityData";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { ActivityType } from "@/types/activity";
-import { Activity } from "lucide-react";
+import { Play, Square } from "lucide-react";
 
 const ActivityPage = () => {
   const { t } = useLanguage();
@@ -60,6 +61,17 @@ const ActivityPage = () => {
       setIsGoalDialogOpen(false);
     }
   };
+
+  const handleSelectActivity = (activityType: ActivityType) => {
+    setSelectedActivityType(activityType);
+    if (!isTracking) {
+      setIsTracking(true);
+    }
+  };
+
+  const toggleTracking = () => {
+    setIsTracking(!isTracking);
+  };
   
   return (
     <div className="pb-20 px-6 max-w-lg mx-auto">
@@ -79,33 +91,47 @@ const ActivityPage = () => {
       />
 
       <Tabs defaultValue="workouts" className="mb-6">
-        <TabsList className="w-full mb-4">
-          <TabsTrigger value="workouts" className="flex-1">{t('activity.startWorkout')}</TabsTrigger>
-          <TabsTrigger value="history" className="flex-1">{t('activity.recentActivity')}</TabsTrigger>
+        <TabsList className="w-full mb-4 grid grid-cols-2">
+          <TabsTrigger value="workouts" className="flex-1 text-sm">
+            {t('activity.startWorkout')}
+          </TabsTrigger>
+          <TabsTrigger value="history" className="flex-1 text-sm">
+            {t('activity.recentActivity')}
+          </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="workouts">
+        <TabsContent value="workouts" className="space-y-4">
           <Card className="p-5">
-            <h3 className="font-medium mb-3">{t('activity.quickStart')}</h3>
-            <div className="grid grid-cols-3 gap-3">
-              {activityTypes.map((activity) => (
-                <Button 
-                  key={activity}
-                  variant="outline"
-                  className={`h-20 flex flex-col justify-center items-center border-2 ${
-                    isTracking && selectedActivityType === activity ? 'border-health-blue' : ''
-                  }`}
-                  onClick={() => {
-                    setSelectedActivityType(activity);
-                    setIsTracking(true);
-                  }}
-                >
-                  <Activity className="h-5 w-5 mb-1" />
-                  <span className="text-xs">{t(`activity.${activity}`)}</span>
-                </Button>
-              ))}
-            </div>
+            <ActivityTypeSelector
+              activityTypes={activityTypes}
+              selectedActivityType={selectedActivityType}
+              isTracking={isTracking}
+              onSelectActivity={handleSelectActivity}
+            />
           </Card>
+          
+          <Button
+            className={`w-full h-14 text-lg font-semibold transition-all duration-300 transform hover:scale-105 active:scale-95 ${
+              isTracking 
+                ? 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-lg' 
+                : 'bg-gradient-to-r from-health-blue to-health-teal hover:from-health-teal hover:to-health-blue shadow-lg'
+            }`}
+            onClick={toggleTracking}
+          >
+            <div className="flex items-center gap-3">
+              {isTracking ? (
+                <>
+                  <Square className="h-5 w-5" />
+                  {t('activity.stopTracking')}
+                </>
+              ) : (
+                <>
+                  <Play className="h-5 w-5" />
+                  {t('activity.startTracking')}
+                </>
+              )}
+            </div>
+          </Button>
         </TabsContent>
         
         <TabsContent value="history">
@@ -117,13 +143,6 @@ const ActivityPage = () => {
       </Tabs>
       
       <WeeklyActivityChart weeklyActivities={weeklyActivities} />
-      
-      <Button
-        className={`w-full ${isTracking ? 'bg-red-500 hover:bg-red-600' : 'bg-health-blue hover:bg-blue-600'}`}
-        onClick={() => setIsTracking(!isTracking)}
-      >
-        {isTracking ? t('activity.stopTracking') : t('activity.startTracking')}
-      </Button>
       
       <AddActivityDialog
         isOpen={isAddDialogOpen}
