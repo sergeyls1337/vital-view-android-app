@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface LanguageContextProps {
@@ -90,6 +91,10 @@ const translations = {
       gym: "Gym",
       startTracking: "Start Tracking",
       stopTracking: "Stop Tracking",
+      goal: "Daily Step Goal",
+      stepsToday: "Steps Today",
+      distance: "Distance Covered",
+      time: "Active Time",
     },
     water: {
       trackHydration: "Track your hydration",
@@ -129,6 +134,7 @@ const translations = {
       confirmDelete: "Are you sure you want to delete this sleep entry?",
       sleepTime: "Sleep Time",
       wakeUpTime: "Wake Up Time",
+      wakeTime: "Wake Up Time",
       date: "Date",
       notes: "Notes",
       add: "Add",
@@ -212,6 +218,14 @@ const translations = {
       left: "left to goal",
       progressChart: "Progress Chart",
       weightHistory: "Weight History",
+      enterWeight: "Enter your weight",
+      invalidWeight: "Invalid weight",
+      enterValidNumber: "Please enter a valid number",
+      weightAdded: "Weight added successfully",
+      added: "Added",
+      toRecords: "to your records",
+      noChange: "No change",
+      noWeightEntries: "No weight entries recorded yet",
     },
     steps: {
       trackSteps: "Track your steps",
@@ -255,6 +269,8 @@ const translations = {
       running: "Running",
       cycling: "Cycling",
       swimming: "Swimming",
+      weeklyActivitySteps: "Weekly Steps Progress",
+      progress: "Progress",
     },
     settings: {
       language: "Language",
@@ -404,6 +420,10 @@ const translations = {
       gym: "Спортзал",
       startTracking: "Почати відстеження",
       stopTracking: "Зупинити відстеження",
+      goal: "Денна ціль кроків",
+      stepsToday: "Кроків сьогодні",
+      distance: "Пройдена відстань",
+      time: "Час активності",
     },
     water: {
       trackHydration: "Відстежуйте ваше споживання води",
@@ -443,6 +463,7 @@ const translations = {
       confirmDelete: "Ви впевнені, що хочете видалити цей запис про сон?",
       sleepTime: "Час засинання",
       wakeUpTime: "Час пробудження",
+      wakeTime: "Час пробудження",
       date: "Дата",
       notes: "Примітки",
       add: "Додати",
@@ -526,6 +547,14 @@ const translations = {
       left: "до цілі",
       progressChart: "Графік прогресу",
       weightHistory: "Історія ваги",
+      enterWeight: "Введіть вашу вагу",
+      invalidWeight: "Невірна вага",
+      enterValidNumber: "Будь ласка, введіть дійсне число",
+      weightAdded: "Вага успішно додана",
+      added: "Додано",
+      toRecords: "до ваших записів",
+      noChange: "Без змін",
+      noWeightEntries: "Поки що немає записів про вагу",
     },
     steps: {
       trackSteps: "Відстежуйте свої кроки",
@@ -569,6 +598,8 @@ const translations = {
       running: "Біг",
       cycling: "Велоспорт",
       swimming: "Плавання",
+      weeklyActivitySteps: "Щотижневий прогрес кроків",
+      progress: "Прогрес",
     },
     settings: {
       language: "Мова",
