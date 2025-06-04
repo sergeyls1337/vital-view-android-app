@@ -1,5 +1,5 @@
-
 import { useState, useEffect } from 'react';
+import { Trophy, Droplets, Moon, Target, Zap, Crown } from 'lucide-react';
 import { useActivityData } from './useActivityData';
 import { useWaterData } from './useWaterData';
 import { useSleepData } from './useSleepData';
