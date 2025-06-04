@@ -14,11 +14,18 @@ export const useWeightData = () => {
   const { user } = useAuth();
   const [weightEntries, setWeightEntries] = useState<WeightEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userHeight, setUserHeight] = useState(170); // Default height in cm
 
-  // Load weight entries from localStorage for now (can be migrated to Supabase later)
+  // Load weight entries and user height from localStorage
   const loadWeightEntries = async () => {
     try {
       const savedWeightData = localStorage.getItem("weightData");
+      const savedHeight = localStorage.getItem(`userHeight_${user?.id || 'default'}`);
+      
+      if (savedHeight) {
+        setUserHeight(parseFloat(savedHeight));
+      }
+      
       if (savedWeightData) {
         const data = JSON.parse(savedWeightData);
         const formattedEntries: WeightEntry[] = data.map((entry: any, index: number) => ({
@@ -88,6 +95,25 @@ export const useWeightData = () => {
     return weightEntries.length > 0 ? weightEntries[weightEntries.length - 1].weight : 0;
   };
 
+  const getCurrentBMI = () => {
+    const currentWeight = getCurrentWeight();
+    if (currentWeight === 0 || userHeight === 0) return 0;
+    const heightInMeters = userHeight / 100;
+    return +(currentWeight / (heightInMeters * heightInMeters)).toFixed(1);
+  };
+
+  const getBMICategory = (bmi: number) => {
+    if (bmi < 18.5) return { category: 'Underweight', color: 'text-blue-600' };
+    if (bmi < 25) return { category: 'Normal', color: 'text-green-600' };
+    if (bmi < 30) return { category: 'Overweight', color: 'text-orange-600' };
+    return { category: 'Obese', color: 'text-red-600' };
+  };
+
+  const updateUserHeight = (height: number) => {
+    setUserHeight(height);
+    localStorage.setItem(`userHeight_${user?.id || 'default'}`, height.toString());
+  };
+
   useEffect(() => {
     loadWeightEntries();
   }, [user]);
@@ -98,5 +124,9 @@ export const useWeightData = () => {
     saveWeightEntry,
     loadWeightEntries,
     getCurrentWeight,
+    getCurrentBMI,
+    getBMICategory,
+    userHeight,
+    updateUserHeight,
   };
 };
