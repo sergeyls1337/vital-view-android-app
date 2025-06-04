@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface LanguageContextProps {
@@ -566,6 +567,7 @@ const translations = {
       noWeightData: "Немає даних про вагу",
       weeklyOverview: "Щотижневий огляд",
       kilograms: "Кілограми",
+      weightGoal: "Цільова вага",
       setGoal: "Встановити ціль",
       startTracking: "Почати відстеження",
       current: "Поточна",
