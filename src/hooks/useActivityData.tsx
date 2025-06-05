@@ -11,16 +11,48 @@ export const useActivityData = () => {
   const [newStepsGoal, setNewStepsGoal] = useState("10000");
   const [selectedActivityType, setSelectedActivityType] = useState<ActivityType>("walking");
   
+  // Helper function to get today's date string
+  const getTodayDateString = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0]; // YYYY-MM-DD format
+  };
+
+  // Helper function to get day name from date
+  const getDayName = (dateString: string) => {
+    const date = new Date(dateString + 'T00:00:00');
+    return date.toLocaleDateString('en-US', { weekday: 'short' });
+  };
+
   useEffect(() => {
     // Load activities from localStorage
     const savedActivities = localStorage.getItem("activityData");
     if (savedActivities) {
-      setActivities(JSON.parse(savedActivities));
+      const parsedActivities = JSON.parse(savedActivities);
+      
+      // Check if we need to create a new day entry
+      const todayDateString = getTodayDateString();
+      const todayActivity = parsedActivities.find((a: DailyActivity) => a.date === todayDateString);
+      
+      if (!todayActivity) {
+        // Create new entry for today with zero steps
+        const newTodayActivity = {
+          date: todayDateString,
+          steps: 0,
+          distance: 0,
+          calories: 0,
+          duration: 0
+        };
+        const updatedActivities = [...parsedActivities, newTodayActivity];
+        setActivities(updatedActivities);
+        localStorage.setItem("activityData", JSON.stringify(updatedActivities));
+      } else {
+        setActivities(parsedActivities);
+      }
     } else {
-      // Default activity if nothing is saved
-      const today = new Date().toLocaleDateString('en-US', { weekday: 'short' });
+      // Create initial activity for today
+      const todayDateString = getTodayDateString();
       const initialActivity = {
-        date: today,
+        date: todayDateString,
         steps: 0,
         distance: 0,
         calories: 0,
@@ -38,29 +70,37 @@ export const useActivityData = () => {
   }, []);
   
   const getCurrentActivity = () => {
-    return activities.length > 0 ? activities[activities.length - 1] : { steps: 0, distance: 0, calories: 0, duration: 0, date: "" };
+    const todayDateString = getTodayDateString();
+    const todayActivity = activities.find(a => a.date === todayDateString);
+    return todayActivity || { steps: 0, distance: 0, calories: 0, duration: 0, date: todayDateString };
   };
   
   const currentActivity = getCurrentActivity();
   const stepsProgress = Math.min(100, Math.round((currentActivity.steps / stepsGoal) * 100));
   
   const updateCurrentActivity = (updatedSteps: number) => {
-    const today = new Date().toLocaleDateString('en-US', { weekday: 'short' });
+    const todayDateString = getTodayDateString();
     const distance = +(updatedSteps * 0.0007).toFixed(1);
     const calories = Math.round(updatedSteps * 0.04);
     const duration = Math.round(updatedSteps * 0.01);
     
     const updatedActivity = {
-      date: today,
+      date: todayDateString,
       steps: updatedSteps,
       distance,
       calories,
       duration,
     };
     
-    const updatedActivities = activities.length > 0 
-      ? [...activities.slice(0, -1), updatedActivity]
-      : [updatedActivity];
+    // Find and update today's activity or add new one
+    const updatedActivities = [...activities];
+    const todayIndex = updatedActivities.findIndex(a => a.date === todayDateString);
+    
+    if (todayIndex >= 0) {
+      updatedActivities[todayIndex] = updatedActivity;
+    } else {
+      updatedActivities.push(updatedActivity);
+    }
     
     setActivities(updatedActivities);
     localStorage.setItem("activityData", JSON.stringify(updatedActivities));
@@ -112,26 +152,15 @@ export const useActivityData = () => {
       duration = Math.round(steps * 0.015);
     }
     
-    const today = new Date().toLocaleDateString('en-US', { weekday: 'short' });
-    
-    const newActivity = {
-      date: today,
-      steps,
-      distance,
-      calories,
-      duration,
-      activityType: selectedActivityType
-    };
-    
-    const updatedActivities = [...activities, newActivity];
-    setActivities(updatedActivities);
-    localStorage.setItem("activityData", JSON.stringify(updatedActivities));
+    // Add to today's total
+    const newTotalSteps = currentActivity.steps + steps;
+    updateCurrentActivity(newTotalSteps);
     
     setNewSteps("");
     
     toast({
       title: "Activity added",
-      description: `Added ${steps} steps from ${selectedActivityType} to your activity log`,
+      description: `Added ${steps} steps from ${selectedActivityType} to today's total`,
     });
     
     return true;
@@ -161,37 +190,84 @@ export const useActivityData = () => {
   
   const getWeeklyActivities = () => {
     const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-    const today = new Date().getDay(); // 0 is Sunday
-    const todayIndex = today === 0 ? 6 : today - 1; // Convert to 0-indexed Monday start
+    const today = new Date();
+    const currentDayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const mondayOffset = currentDayOfWeek === 0 ? -6 : 1 - currentDayOfWeek;
     
     return weekdays.map((day, index) => {
-      const activity = activities.find(a => a.date === day);
+      const date = new Date(today);
+      date.setDate(today.getDate() + mondayOffset + index);
+      const dateString = date.toISOString().split('T')[0];
+      
+      const activity = activities.find(a => a.date === dateString);
       const steps = activity ? activity.steps : 0;
       const heightPercent = Math.min(90, Math.max(10, Math.round((steps / stepsGoal) * 100)));
-      const isToday = index === todayIndex;
+      const isToday = dateString === getTodayDateString();
       
-      return { day, steps, heightPercent, isToday };
+      return { day, steps, heightPercent, isToday, date: dateString };
     });
   };
 
   const getRecentActivities = () => {
-    // Return the most recent 5 activities
-    return [...activities].reverse().slice(0, 5);
+    // Return the most recent 7 days of activities, sorted by date descending
+    return [...activities]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 7)
+      .map(activity => ({
+        ...activity,
+        day: getDayName(activity.date)
+      }));
   };
 
   const getCurrentWeekStats = () => {
     const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    const today = new Date();
+    const currentDayOfWeek = today.getDay();
+    const mondayOffset = currentDayOfWeek === 0 ? -6 : 1 - currentDayOfWeek;
     
-    return weekdays.map((day) => {
-      const activity = activities.find(a => a.date === day);
+    return weekdays.map((day, index) => {
+      const date = new Date(today);
+      date.setDate(today.getDate() + mondayOffset + index);
+      const dateString = date.toISOString().split('T')[0];
+      
+      const activity = activities.find(a => a.date === dateString);
+      
       return {
         day,
+        date: dateString,
         steps: activity ? activity.steps : 0,
         calories: activity ? activity.calories : 0,
         distance: activity ? activity.distance : 0,
         duration: activity ? activity.duration : 0
       };
     });
+  };
+
+  // Get statistics for longer periods
+  const getMonthlyStats = () => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    return activities.filter(activity => {
+      const activityDate = new Date(activity.date);
+      return activityDate.getMonth() === currentMonth && activityDate.getFullYear() === currentYear;
+    });
+  };
+
+  const getAllTimeStats = () => {
+    const totalSteps = activities.reduce((sum, activity) => sum + activity.steps, 0);
+    const totalDistance = activities.reduce((sum, activity) => sum + activity.distance, 0);
+    const totalCalories = activities.reduce((sum, activity) => sum + activity.calories, 0);
+    const activeDays = activities.filter(activity => activity.steps > 0).length;
+    
+    return {
+      totalSteps,
+      totalDistance,
+      totalCalories,
+      activeDays,
+      averageStepsPerDay: activeDays > 0 ? Math.round(totalSteps / activeDays) : 0
+    };
   };
 
   return {
@@ -213,6 +289,8 @@ export const useActivityData = () => {
     handleDecreaseSteps,
     getWeeklyActivities,
     getRecentActivities,
-    getCurrentWeekStats
+    getCurrentWeekStats,
+    getMonthlyStats,
+    getAllTimeStats
   };
 };
