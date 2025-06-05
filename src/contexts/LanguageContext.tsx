@@ -232,6 +232,8 @@ const translations = {
       sleepConsistency: "Sleep Consistency",
       recentTrend: "Recent Trend",
       optimalBedtime: "Optimal Bedtime",
+      target: "Target",
+      progress: "Progress",
     },
     weight: {
       trackWeight: "Track your weight",
@@ -355,6 +357,10 @@ const translations = {
       hydrationHero: "Hydration Hero",
       sleepChampion: "Sleep Champion",
       goalAchiever: "Goal Achiever",
+      stepMaster: "Step Master",
+      improving: "Improving",
+      declining: "Declining",
+      stable: "Stable",
     },
     settings: {
       language: "Language",
@@ -653,6 +659,8 @@ const translations = {
       sleepConsistency: "Послідовність сну",
       recentTrend: "Нещодавній тренд",
       optimalBedtime: "Оптимальний час сну",
+      target: "Ціль",
+      progress: "Прогрес",
     },
     weight: {
       trackWeight: "Відстежуйте свою вагу",
@@ -776,6 +784,10 @@ const translations = {
       hydrationHero: "Герой гідратації",
       sleepChampion: "Чемпіон сну",
       goalAchiever: "Досягнувач цілі",
+      stepMaster: "Майстер кроків",
+      improving: "Покращується",
+      declining: "Погіршується",
+      stable: "Стабільно",
     },
     settings: {
       language: "Мова",

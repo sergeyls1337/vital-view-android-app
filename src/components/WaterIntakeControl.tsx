@@ -25,19 +25,19 @@ const WaterIntakeControl = ({
   return (
     <div className="flex flex-col items-center">
       <div className="relative w-40 h-40 mb-6">
-        {/* Water container with wave effect */}
+        {/* Water container */}
         <div className="absolute inset-0 rounded-full border-4 border-blue-100 bg-gradient-to-b from-blue-50 to-blue-100 overflow-hidden">
           <div 
             className={cn(
               "absolute bottom-0 left-0 right-0 transition-all duration-700 ease-out rounded-b-full",
               isGoalReached 
-                ? "bg-gradient-to-t from-blue-500 to-blue-400 animate-pulse" 
+                ? "bg-gradient-to-t from-blue-500 to-blue-400" 
                 : "bg-gradient-to-t from-blue-300 to-blue-200"
             )}
             style={{ height: `${Math.max(10, progress)}%` }}
           >
-            {/* Wave animation */}
-            <div className="absolute top-0 left-0 right-0 h-2 bg-blue-400 opacity-60 animate-pulse" />
+            {/* Gentle wave effect - no aggressive animation */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-blue-400 opacity-30" />
           </div>
         </div>
         
@@ -47,11 +47,7 @@ const WaterIntakeControl = ({
             "flex items-center gap-2 mb-1 transition-colors duration-300",
             isGoalReached ? "text-blue-600" : "text-health-blue"
           )}>
-            {isGoalReached ? (
-              <Target className="h-6 w-6 animate-bounce" />
-            ) : (
-              <Droplets className="h-6 w-6" />
-            )}
+            <Droplets className="h-6 w-6" />
           </div>
           <span className="text-2xl font-bold text-foreground">{currentIntake}</span>
           <span className="text-sm text-muted-foreground">ml</span>
@@ -62,10 +58,10 @@ const WaterIntakeControl = ({
           </div>
         </div>
         
-        {/* Goal achievement celebration */}
+        {/* Goal achievement indicator - no aggressive animation */}
         {isGoalReached && (
-          <div className="absolute -top-2 -right-2 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center animate-bounce">
-            <Target className="h-4 w-4 text-white" />
+          <div className="absolute -top-2 -right-2 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+            <Droplets className="h-4 w-4 text-white" />
           </div>
         )}
       </div>
@@ -100,7 +96,7 @@ const WaterIntakeControl = ({
           className={cn(
             "rounded-full h-20 w-20 flex items-center justify-center transition-all duration-300 transform hover:scale-110 active:scale-95",
             isGoalReached 
-              ? "bg-gradient-to-br from-green-500 to-green-600 shadow-lg animate-pulse" 
+              ? "bg-gradient-to-br from-green-500 to-green-600 shadow-lg" 
               : "bg-gradient-to-br from-health-blue to-blue-600 shadow-lg hover:shadow-xl"
           )}
           onClick={() => handleAddWater(250)}
@@ -127,7 +123,7 @@ const WaterIntakeControl = ({
       {progress > 0 && progress < 100 && (
         <div className="mt-4 text-center">
           <p className="text-sm text-muted-foreground flex items-center gap-1">
-            <TrendingUp className="h-3 w-3" />
+            <Droplets className="h-3 w-3" />
             {progress < 25 && "Great start! Keep it up!"}
             {progress >= 25 && progress < 50 && "You're doing well!"}
             {progress >= 50 && progress < 75 && "Halfway there!"}
@@ -139,7 +135,7 @@ const WaterIntakeControl = ({
       {isGoalReached && (
         <div className="mt-4 text-center p-3 bg-green-50 rounded-lg border border-green-200">
           <p className="text-sm font-medium text-green-700 flex items-center justify-center gap-1">
-            <Target className="h-4 w-4" />
+            <Droplets className="h-4 w-4" />
             Goal achieved! Stay hydrated! 🎉
           </p>
         </div>
