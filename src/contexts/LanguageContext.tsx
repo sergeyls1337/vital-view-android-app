@@ -24,6 +24,7 @@ const translations = {
       error: "Error",
       success: "Success",
       home: "Home",
+      submit: "Submit",
       goodMorning: "Good morning",
       goodAfternoon: "Good afternoon",
       goodEvening: "Good evening",
@@ -393,6 +394,13 @@ const translations = {
       invalidEmail: "Invalid email address",
       signOut: "Sign Out",
     },
+    feedback: {
+      description: "Share your thoughts and suggestions to help us improve the app",
+      subject: "Subject",
+      message: "Message",
+      sent: "Feedback sent successfully",
+      error: "Failed to send feedback"
+    },
     tips: {
       water: {
         low: "Try to drink {glasses} more glasses of water before dinner",
@@ -437,6 +445,7 @@ const translations = {
       error: "Помилка",
       success: "Успіх",
       home: "Головна",
+      submit: "Надіслати",
       goodMorning: "Доброго ранку",
       goodAfternoon: "Добрий день",
       goodEvening: "Добрий вечір",
@@ -805,6 +814,13 @@ const translations = {
       passwordMatch: "Паролі повинні збігатися",
       invalidEmail: "Недійсна адреса електронної пошти",
       signOut: "Вийти",
+    },
+    feedback: {
+      description: "Поділіться своїми думками та пропозиціями, щоб допомогти нам покращити додаток",
+      subject: "Тема",
+      message: "Повідомлення",
+      sent: "Відгук успішно надіслано",
+      error: "Не вдалося надіслати відгук"
     },
     tips: {
       water: {
