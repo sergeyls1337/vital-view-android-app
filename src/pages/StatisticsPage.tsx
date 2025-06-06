@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -145,21 +146,21 @@ const StatisticsPage = () => {
   };
 
   return (
-    <div className="pb-20 px-6 max-w-4xl mx-auto animate-fade-in">
+    <div className="pb-20 px-4 sm:px-6 max-w-7xl mx-auto animate-fade-in">
       <PageHeader 
         title={t('statistics.title')} 
         description={t('statistics.description')}
       />
 
       {/* Period Selector */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex gap-2 mb-6 overflow-x-auto">
         {['week', 'month', 'year'].map((period) => (
           <Button
             key={period}
             variant={selectedPeriod === period ? "default" : "outline"}
             size="sm"
             onClick={() => setSelectedPeriod(period)}
-            className="capitalize hover-scale"
+            className="capitalize hover-scale whitespace-nowrap"
           >
             {t(`statistics.${period}`)}
           </Button>
@@ -170,12 +171,12 @@ const StatisticsPage = () => {
       <StatisticsOverview metrics={overviewMetrics} />
 
       {/* New Advanced Analytics Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6 mb-6">
         <TrendAnalysisCard trends={trends} />
         <HealthScoreCard metrics={healthMetrics} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6 mb-6">
         <ComparisonChart 
           data={comparisonData}
           title={t('statistics.comparison')}
@@ -185,25 +186,27 @@ const StatisticsPage = () => {
       </div>
 
       <Tabs defaultValue="activity" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="activity">{t('navigation.activity')}</TabsTrigger>
-          <TabsTrigger value="water">{t('navigation.water')}</TabsTrigger>
-          <TabsTrigger value="sleep">{t('navigation.sleep')}</TabsTrigger>
-          <TabsTrigger value="weight">{t('navigation.weight')}</TabsTrigger>
-        </TabsList>
+        <div className="w-full overflow-x-auto">
+          <TabsList className="grid w-full grid-cols-4 min-w-[320px]">
+            <TabsTrigger value="activity" className="text-xs sm:text-sm">{t('navigation.activity')}</TabsTrigger>
+            <TabsTrigger value="water" className="text-xs sm:text-sm">{t('navigation.water')}</TabsTrigger>
+            <TabsTrigger value="sleep" className="text-xs sm:text-sm">{t('navigation.sleep')}</TabsTrigger>
+            <TabsTrigger value="weight" className="text-xs sm:text-sm">{t('navigation.weight')}</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="activity" className="space-y-4">
           <Card className="hover-scale transition-all duration-200">
-            <CardHeader>
-              <CardTitle>{t('statistics.weeklyActivityTrends')}</CardTitle>
-              <CardDescription>{t('statistics.stepsAndCalories')}</CardDescription>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base sm:text-lg">{t('statistics.weeklyActivityTrends')}</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">{t('statistics.stepsAndCalories')}</CardDescription>
             </CardHeader>
-            <CardContent>
-              <ChartContainer config={chartConfig} className="h-72">
+            <CardContent className="px-2 sm:px-6">
+              <ChartContainer config={chartConfig} className="h-64 sm:h-72">
                 <LineChart data={activityTrendData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="day" />
-                  <YAxis />
+                  <XAxis dataKey="day" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 10 }} />
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <Line 
                     type="monotone" 
@@ -225,21 +228,22 @@ const StatisticsPage = () => {
           </Card>
 
           <Card className="hover-scale transition-all duration-200">
-            <CardHeader>
-              <CardTitle>{t('statistics.activityDistribution')}</CardTitle>
-              <CardDescription>{t('statistics.favoriteActivities')}</CardDescription>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base sm:text-lg">{t('statistics.activityDistribution')}</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">{t('statistics.favoriteActivities')}</CardDescription>
             </CardHeader>
-            <CardContent>
-              <ChartContainer config={chartConfig} className="h-72">
+            <CardContent className="px-2 sm:px-6">
+              <ChartContainer config={chartConfig} className="h-64 sm:h-72">
                 <PieChart>
                   <Pie
                     data={activityDistribution}
                     cx="50%"
                     cy="50%"
-                    outerRadius={100}
+                    outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"
                     label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    labelStyle={{ fontSize: '10px' }}
                   >
                     {activityDistribution.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
@@ -254,16 +258,16 @@ const StatisticsPage = () => {
 
         <TabsContent value="water" className="space-y-4">
           <Card className="hover-scale transition-all duration-200">
-            <CardHeader>
-              <CardTitle>{t('statistics.waterIntakeTrends')}</CardTitle>
-              <CardDescription>{t('statistics.dailyWaterConsumption')}</CardDescription>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base sm:text-lg">{t('statistics.waterIntakeTrends')}</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">{t('statistics.dailyWaterConsumption')}</CardDescription>
             </CardHeader>
-            <CardContent>
-              <ChartContainer config={chartConfig} className="h-72">
+            <CardContent className="px-2 sm:px-6">
+              <ChartContainer config={chartConfig} className="h-64 sm:h-72">
                 <BarChart data={waterTrendData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="day" />
-                  <YAxis />
+                  <XAxis dataKey="day" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 10 }} />
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <Bar 
                     dataKey="amount" 
@@ -278,16 +282,16 @@ const StatisticsPage = () => {
 
         <TabsContent value="sleep" className="space-y-4">
           <Card className="hover-scale transition-all duration-200">
-            <CardHeader>
-              <CardTitle>{t('statistics.sleepPatterns')}</CardTitle>
-              <CardDescription>{t('statistics.sleepDurationQuality')}</CardDescription>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base sm:text-lg">{t('statistics.sleepPatterns')}</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">{t('statistics.sleepDurationQuality')}</CardDescription>
             </CardHeader>
-            <CardContent>
-              <ChartContainer config={chartConfig} className="h-72">
+            <CardContent className="px-2 sm:px-6">
+              <ChartContainer config={chartConfig} className="h-64 sm:h-72">
                 <LineChart data={sleepTrendData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="date" />
-                  <YAxis />
+                  <XAxis dataKey="date" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 10 }} />
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <Line 
                     type="monotone" 
@@ -311,16 +315,16 @@ const StatisticsPage = () => {
 
         <TabsContent value="weight" className="space-y-4">
           <Card className="hover-scale transition-all duration-200">
-            <CardHeader>
-              <CardTitle>{t('statistics.weightProgress')}</CardTitle>
-              <CardDescription>{t('statistics.weightJourney')}</CardDescription>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base sm:text-lg">{t('statistics.weightProgress')}</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">{t('statistics.weightJourney')}</CardDescription>
             </CardHeader>
-            <CardContent>
-              <ChartContainer config={chartConfig} className="h-72">
+            <CardContent className="px-2 sm:px-6">
+              <ChartContainer config={chartConfig} className="h-64 sm:h-72">
                 <LineChart data={[{date: "2024-01", weight: 75}, {date: "2024-02", weight: 74}, {date: "2024-03", weight: 73}]}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="date" />
-                  <YAxis domain={['dataMin - 1', 'dataMax + 1']} />
+                  <XAxis dataKey="date" tick={{ fontSize: 10 }} />
+                  <YAxis domain={['dataMin - 1', 'dataMax + 1']} tick={{ fontSize: 10 }} />
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <Line 
                     type="monotone" 

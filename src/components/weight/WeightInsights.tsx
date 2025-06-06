@@ -79,8 +79,8 @@ const WeightInsights = ({ weightEntries, goalWeight }: WeightInsightsProps) => {
       <Card className="p-5 bg-gradient-to-r from-gray-50 to-slate-50">
         <div className="text-center py-8">
           <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-          <h3 className="font-medium text-gray-600 mb-2">{t('weight.insightsTitle')}</h3>
-          <p className="text-sm text-gray-500">{t('weight.needMoreData')}</p>
+          <h3 className="font-medium text-gray-600 mb-2">Weight Insights</h3>
+          <p className="text-sm text-gray-500">Add more weight entries to see detailed insights and trends</p>
         </div>
       </Card>
     );
