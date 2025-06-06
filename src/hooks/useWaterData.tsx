@@ -35,6 +35,22 @@ export const useWaterData = () => {
     return new Date().toISOString().split('T')[0];
   };
 
+  const parseWaterEntries = (entries: any): WaterEntry[] => {
+    if (!entries || !Array.isArray(entries)) return [];
+    
+    return entries.filter((entry: any) => 
+      entry && 
+      typeof entry === 'object' && 
+      'time' in entry && 
+      'amount' in entry &&
+      'date' in entry
+    ).map((entry: any) => ({
+      time: String(entry.time),
+      amount: Number(entry.amount),
+      date: String(entry.date)
+    }));
+  };
+
   const loadWaterData = async () => {
     if (!user) {
       setLoading(false);
@@ -76,10 +92,8 @@ export const useWaterData = () => {
       const todayEntry = entries?.find(e => e.date === todayDateString);
       
       const currentIntake = todayEntry?.total_intake || 0;
-      // Parse the entries JSON field safely
-      const todayEntries: WaterEntry[] = todayEntry?.entries 
-        ? (Array.isArray(todayEntry.entries) ? todayEntry.entries as WaterEntry[] : [])
-        : [];
+      // Parse the entries JSON field safely using the helper function
+      const todayEntries = parseWaterEntries(todayEntry?.entries);
 
       setWaterData({
         currentIntake,
@@ -204,7 +218,7 @@ export const useWaterData = () => {
           date: todayDateString,
           total_intake: newIntake,
           daily_goal: waterData.dailyGoal,
-          entries: newEntries as any // Type cast to satisfy Supabase Json type
+          entries: newEntries // TypeScript will correctly handle this as Supabase expects Json
         });
 
       if (error) {
