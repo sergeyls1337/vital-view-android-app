@@ -16,45 +16,45 @@ export const useWeightData = () => {
   const [loading, setLoading] = useState(true);
   const [userHeight, setUserHeight] = useState(170); // Default height in cm
 
-  // Load weight entries and user height from localStorage
+  // Load weight entries and user height from Supabase
   const loadWeightEntries = async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
     try {
-      const savedWeightData = localStorage.getItem("weightData");
-      const savedHeight = localStorage.getItem(`userHeight_${user?.id || 'default'}`);
-      
-      if (savedHeight) {
-        setUserHeight(parseFloat(savedHeight));
+      // Load user preferences for height
+      const { data: preferences } = await supabase
+        .from('user_preferences')
+        .select('user_height')
+        .eq('user_id', user.id)
+        .single();
+
+      if (preferences?.user_height) {
+        setUserHeight(preferences.user_height);
       }
-      
-      if (savedWeightData) {
-        const data = JSON.parse(savedWeightData);
-        const formattedEntries: WeightEntry[] = data.map((entry: any, index: number) => ({
-          id: `weight_${index}`,
-          date: entry.date,
-          weight: entry.weight,
-        }));
-        setWeightEntries(formattedEntries);
-      } else {
-        // Default data if nothing is saved yet
-        const initialData = [
-          { date: "May 1", weight: 77.5 },
-          { date: "May 5", weight: 77.0 },
-          { date: "May 9", weight: 76.2 },
-          { date: "May 13", weight: 75.8 },
-          { date: "May 17", weight: 75.0 },
-          { date: "May 21", weight: 74.5 },
-          { date: "May 25", weight: 75.0 },
-        ];
-        
-        const formattedEntries: WeightEntry[] = initialData.map((entry, index) => ({
-          id: `weight_${index}`,
-          date: entry.date,
-          weight: entry.weight,
-        }));
-        
-        setWeightEntries(formattedEntries);
-        localStorage.setItem("weightData", JSON.stringify(initialData));
+
+      // Load weight entries
+      const { data, error } = await supabase
+        .from('weight_entries')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('date', { ascending: true });
+
+      if (error) {
+        console.error('Error loading weight entries:', error);
+        toast.error('Failed to load weight data');
+        return;
       }
+
+      const formattedEntries: WeightEntry[] = data.map(entry => ({
+        id: entry.id,
+        date: entry.date,
+        weight: entry.weight,
+      }));
+
+      setWeightEntries(formattedEntries);
     } catch (error) {
       console.error('Error loading weight entries:', error);
       toast.error('Failed to load weight data');
@@ -63,25 +63,44 @@ export const useWeightData = () => {
     }
   };
 
-  // Save weight entry to localStorage
+  // Save weight entry to Supabase
   const saveWeightEntry = async (weight: number) => {
+    if (!user) {
+      toast.error('Please log in to save weight data');
+      return false;
+    }
+
     try {
       const today = new Date();
-      const date = today.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const date = today.toISOString().split('T')[0];
       
-      const newEntry = { date, weight };
-      const currentData = JSON.parse(localStorage.getItem("weightData") || "[]");
-      const updatedData = [...currentData, newEntry];
-      
-      localStorage.setItem("weightData", JSON.stringify(updatedData));
-      
-      const formattedEntry: WeightEntry = {
-        id: `weight_${Date.now()}`,
-        date,
-        weight,
+      const { data, error } = await supabase
+        .from('weight_entries')
+        .upsert({
+          user_id: user.id,
+          date,
+          weight
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error saving weight entry:', error);
+        toast.error('Failed to save weight data');
+        return false;
+      }
+
+      const newEntry: WeightEntry = {
+        id: data.id,
+        date: data.date,
+        weight: data.weight,
       };
       
-      setWeightEntries(prev => [...prev, formattedEntry]);
+      setWeightEntries(prev => {
+        const filtered = prev.filter(e => e.date !== date);
+        return [...filtered, newEntry].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      });
+
       toast.success('Weight data saved successfully');
       return true;
     } catch (error) {
@@ -109,9 +128,26 @@ export const useWeightData = () => {
     return { category: 'Obese', color: 'text-red-600' };
   };
 
-  const updateUserHeight = (height: number) => {
-    setUserHeight(height);
-    localStorage.setItem(`userHeight_${user?.id || 'default'}`, height.toString());
+  const updateUserHeight = async (height: number) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('user_preferences')
+        .upsert({
+          user_id: user.id,
+          user_height: height
+        });
+
+      if (error) {
+        console.error('Error updating user height:', error);
+        return;
+      }
+
+      setUserHeight(height);
+    } catch (error) {
+      console.error('Error updating user height:', error);
+    }
   };
 
   useEffect(() => {

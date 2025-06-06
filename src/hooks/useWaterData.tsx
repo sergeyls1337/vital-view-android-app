@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { dataService } from "@/services/dataService";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
 interface WaterEntry {
@@ -29,64 +29,90 @@ export const useWaterData = () => {
     streak: 0,
     averageDaily: 0
   });
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!user) return;
+  const getTodayDateString = () => {
+    return new Date().toISOString().split('T')[0];
+  };
 
-    const loadWaterData = async () => {
-      try {
-        const userData = await dataService.getUserData(user.id);
-        if (userData.waterData) {
-          setWaterData({
-            ...userData.waterData,
-            streak: calculateStreak(userData.waterData.weeklyData || []),
-            averageDaily: calculateAverageDaily(userData.waterData.weeklyData || [])
-          });
-        } else {
-          // Initialize with default data for new users
-          const initialData = {
-            currentIntake: 0,
-            dailyGoal: 2000,
-            entries: [],
-            weeklyData: generateWeeklyData(),
-            streak: 0,
-            averageDaily: 0
-          };
-          setWaterData(initialData);
-          await saveWaterData(initialData);
-        }
-      } catch (error) {
-        console.error('Error loading water data:', error);
-      }
-    };
+  const loadWaterData = async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
-    loadWaterData();
-  }, [user]);
-
-  const saveWaterData = async (data: WaterData) => {
-    if (!user) return;
-    
     try {
-      const userData = await dataService.getUserData(user.id);
-      userData.waterData = data;
-      await dataService.saveUserData(user.id, userData);
+      // Load user preferences for daily goal
+      const { data: preferences } = await supabase
+        .from('user_preferences')
+        .select('water_goal')
+        .eq('user_id', user.id)
+        .single();
+
+      const dailyGoal = preferences?.water_goal || 2000;
+
+      // Load last 7 days of water entries
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      
+      const { data: entries, error } = await supabase
+        .from('water_entries')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('date', sevenDaysAgo.toISOString().split('T')[0])
+        .order('date', { ascending: true });
+
+      if (error) {
+        console.error('Error loading water data:', error);
+        setLoading(false);
+        return;
+      }
+
+      // Generate weekly data
+      const weeklyData = generateWeeklyData(entries || []);
+      
+      // Get today's data
+      const todayDateString = getTodayDateString();
+      const todayEntry = entries?.find(e => e.date === todayDateString);
+      
+      const currentIntake = todayEntry?.total_intake || 0;
+      const todayEntries = todayEntry?.entries || [];
+
+      setWaterData({
+        currentIntake,
+        dailyGoal,
+        entries: todayEntries,
+        weeklyData,
+        streak: calculateStreak(weeklyData, dailyGoal),
+        averageDaily: calculateAverageDaily(weeklyData)
+      });
     } catch (error) {
-      console.error('Error saving water data:', error);
+      console.error('Error loading water data:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const generateWeeklyData = () => {
+  const generateWeeklyData = (entries: any[]) => {
     const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-    const today = new Date().getDay();
-    const todayIndex = today === 0 ? 6 : today - 1;
+    const today = new Date();
+    const currentDayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const mondayOffset = currentDayOfWeek === 0 ? -6 : 1 - currentDayOfWeek;
     
-    return days.map((day, index) => ({
-      day,
-      amount: index <= todayIndex ? Math.floor(Math.random() * 1000) + 200 : 0
-    }));
+    return days.map((day, index) => {
+      const date = new Date(today);
+      date.setDate(today.getDate() + mondayOffset + index);
+      const dateString = date.toISOString().split('T')[0];
+      
+      const entry = entries.find(e => e.date === dateString);
+      return {
+        day,
+        amount: entry?.total_intake || 0
+      };
+    });
   };
 
-  const calculateStreak = (weeklyData: { day: string; amount: number }[]) => {
+  const calculateStreak = (weeklyData: { day: string; amount: number }[], dailyGoal: number) => {
     if (!weeklyData.length) return 0;
     
     let streak = 0;
@@ -94,7 +120,7 @@ export const useWaterData = () => {
     const todayIndex = today === 0 ? 6 : today - 1;
     
     for (let i = todayIndex; i >= 0; i--) {
-      if (weeklyData[i]?.amount >= 2000) {
+      if (weeklyData[i]?.amount >= dailyGoal) {
         streak++;
       } else {
         break;
@@ -113,7 +139,13 @@ export const useWaterData = () => {
     return daysWithData > 0 ? Math.round(totalAmount / daysWithData) : 0;
   };
 
+  useEffect(() => {
+    loadWaterData();
+  }, [user]);
+
   const addWaterIntake = async (amount: number) => {
+    if (!user) return;
+
     const newIntake = Math.max(0, waterData.currentIntake + amount);
     const currentTime = new Date().toLocaleTimeString('en-US', { 
       hour: 'numeric', 
@@ -159,24 +191,43 @@ export const useWaterData = () => {
       }
     }
 
-    const today = new Date().getDay();
-    const todayIndex = today === 0 ? 6 : today - 1;
-    const newWeeklyData = [...waterData.weeklyData];
-    if (newWeeklyData[todayIndex]) {
-      newWeeklyData[todayIndex].amount = newIntake;
+    try {
+      const todayDateString = getTodayDateString();
+      
+      const { error } = await supabase
+        .from('water_entries')
+        .upsert({
+          user_id: user.id,
+          date: todayDateString,
+          total_intake: newIntake,
+          daily_goal: waterData.dailyGoal,
+          entries: newEntries
+        });
+
+      if (error) {
+        console.error('Error saving water intake:', error);
+        return;
+      }
+
+      // Update local state
+      const today = new Date().getDay();
+      const todayIndex = today === 0 ? 6 : today - 1;
+      const newWeeklyData = [...waterData.weeklyData];
+      if (newWeeklyData[todayIndex]) {
+        newWeeklyData[todayIndex].amount = newIntake;
+      }
+
+      setWaterData({
+        ...waterData,
+        currentIntake: newIntake,
+        entries: newEntries,
+        weeklyData: newWeeklyData,
+        streak: calculateStreak(newWeeklyData, waterData.dailyGoal),
+        averageDaily: calculateAverageDaily(newWeeklyData)
+      });
+    } catch (error) {
+      console.error('Error saving water intake:', error);
     }
-
-    const updatedData = {
-      ...waterData,
-      currentIntake: newIntake,
-      entries: newEntries,
-      weeklyData: newWeeklyData,
-      streak: calculateStreak(newWeeklyData),
-      averageDaily: calculateAverageDaily(newWeeklyData)
-    };
-
-    setWaterData(updatedData);
-    await saveWaterData(updatedData);
   };
 
   const getTodayEntries = () => {
@@ -186,6 +237,7 @@ export const useWaterData = () => {
 
   return {
     ...waterData,
+    loading,
     addWaterIntake,
     getTodayEntries
   };

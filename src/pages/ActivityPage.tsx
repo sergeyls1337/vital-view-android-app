@@ -15,7 +15,7 @@ import ActivityTypeSelector from "@/components/activity/ActivityTypeSelector";
 import { useActivityData } from "@/hooks/useActivityData";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { ActivityType } from "@/types/activity";
-import { Play, Square } from "lucide-react";
+import { Play, Square, Loader2 } from "lucide-react";
 
 const ActivityPage = () => {
   const { t } = useLanguage();
@@ -36,6 +36,7 @@ const ActivityPage = () => {
     setSelectedActivityType,
     currentActivity,
     stepsProgress,
+    loading,
     handleAddActivity,
     handleUpdateGoal,
     handleIncreaseSteps,
@@ -48,15 +49,15 @@ const ActivityPage = () => {
   const weeklyActivities = getWeeklyActivities();
   const recentActivities = getRecentActivities();
   
-  const handleAddActivityConfirm = () => {
-    const success = handleAddActivity();
+  const handleAddActivityConfirm = async () => {
+    const success = await handleAddActivity();
     if (success) {
       setIsAddDialogOpen(false);
     }
   };
   
-  const handleUpdateGoalConfirm = () => {
-    const success = handleUpdateGoal();
+  const handleUpdateGoalConfirm = async () => {
+    const success = await handleUpdateGoal();
     if (success) {
       setIsGoalDialogOpen(false);
     }
@@ -72,6 +73,21 @@ const ActivityPage = () => {
   const toggleTracking = () => {
     setIsTracking(!isTracking);
   };
+
+  if (loading) {
+    return (
+      <div className="pb-20 px-6 max-w-lg mx-auto">
+        <PageHeader 
+          title={t('navigation.activity')} 
+          description={t('activity.description')}
+        />
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-health-blue" />
+        </div>
+        <BottomNavigation />
+      </div>
+    );
+  }
   
   return (
     <div className="pb-20 px-6 max-w-lg mx-auto">

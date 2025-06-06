@@ -2,14 +2,18 @@
 import { useState, useEffect } from "react";
 import { DailyActivity, ActivityType } from "@/types/activity";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const useActivityData = () => {
+  const { user } = useAuth();
   const [isTracking, setIsTracking] = useState(false);
   const [activities, setActivities] = useState<DailyActivity[]>([]);
   const [stepsGoal, setStepsGoal] = useState(10000);
   const [newSteps, setNewSteps] = useState("");
   const [newStepsGoal, setNewStepsGoal] = useState("10000");
   const [selectedActivityType, setSelectedActivityType] = useState<ActivityType>("walking");
+  const [loading, setLoading] = useState(true);
   
   // Helper function to get today's date string
   const getTodayDateString = () => {
@@ -23,52 +27,134 @@ export const useActivityData = () => {
     return date.toLocaleDateString('en-US', { weekday: 'short' });
   };
 
-  useEffect(() => {
-    // Load activities from localStorage
-    const savedActivities = localStorage.getItem("activityData");
-    if (savedActivities) {
-      const parsedActivities = JSON.parse(savedActivities);
-      
-      // Check if we need to create a new day entry
+  // Load user preferences
+  const loadUserPreferences = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('user_preferences')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error loading user preferences:', error);
+        return;
+      }
+
+      if (data) {
+        setStepsGoal(data.steps_goal);
+        setNewStepsGoal(data.steps_goal.toString());
+      } else {
+        // Create default preferences for new user
+        await supabase
+          .from('user_preferences')
+          .insert({
+            user_id: user.id,
+            steps_goal: 10000,
+            water_goal: 2000,
+            sleep_goal: 8.0
+          });
+      }
+    } catch (error) {
+      console.error('Error loading user preferences:', error);
+    }
+  };
+
+  // Load activities from Supabase
+  const loadActivities = async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('activity_entries')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('date', { ascending: false });
+
+      if (error) {
+        console.error('Error loading activities:', error);
+        setLoading(false);
+        return;
+      }
+
+      const formattedActivities: DailyActivity[] = data.map(entry => ({
+        date: entry.date,
+        steps: entry.steps,
+        distance: entry.distance,
+        calories: entry.calories,
+        duration: entry.duration
+      }));
+
+      setActivities(formattedActivities);
+
+      // Ensure today's entry exists
       const todayDateString = getTodayDateString();
-      const todayActivity = parsedActivities.find((a: DailyActivity) => a.date === todayDateString);
+      const todayActivity = formattedActivities.find(a => a.date === todayDateString);
       
       if (!todayActivity) {
-        // Create new entry for today with zero steps
-        const newTodayActivity = {
+        await createTodayActivity();
+      }
+    } catch (error) {
+      console.error('Error loading activities:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Create today's activity entry
+  const createTodayActivity = async () => {
+    if (!user) return;
+
+    const todayDateString = getTodayDateString();
+    
+    try {
+      const { data, error } = await supabase
+        .from('activity_entries')
+        .upsert({
+          user_id: user.id,
           date: todayDateString,
           steps: 0,
           distance: 0,
           calories: 0,
           duration: 0
-        };
-        const updatedActivities = [...parsedActivities, newTodayActivity];
-        setActivities(updatedActivities);
-        localStorage.setItem("activityData", JSON.stringify(updatedActivities));
-      } else {
-        setActivities(parsedActivities);
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating today activity:', error);
+        return;
       }
-    } else {
-      // Create initial activity for today
-      const todayDateString = getTodayDateString();
-      const initialActivity = {
-        date: todayDateString,
-        steps: 0,
-        distance: 0,
-        calories: 0,
-        duration: 0
+
+      const newActivity: DailyActivity = {
+        date: data.date,
+        steps: data.steps,
+        distance: data.distance,
+        calories: data.calories,
+        duration: data.duration
       };
-      setActivities([initialActivity]);
-      localStorage.setItem("activityData", JSON.stringify([initialActivity]));
+
+      setActivities(prev => [newActivity, ...prev.filter(a => a.date !== todayDateString)]);
+    } catch (error) {
+      console.error('Error creating today activity:', error);
     }
-    
-    // Load user's custom goal from localStorage
-    const savedGoal = localStorage.getItem("stepsGoal");
-    if (savedGoal) {
-      setStepsGoal(parseInt(savedGoal));
+  };
+
+  useEffect(() => {
+    if (user) {
+      loadUserPreferences();
+      loadActivities();
+    } else {
+      setActivities([]);
+      setLoading(false);
     }
-  }, []);
-  
+  }, [user]);
+
   const getCurrentActivity = () => {
     const todayDateString = getTodayDateString();
     const todayActivity = activities.find(a => a.date === todayDateString);
@@ -78,60 +164,76 @@ export const useActivityData = () => {
   const currentActivity = getCurrentActivity();
   const stepsProgress = Math.min(100, Math.round((currentActivity.steps / stepsGoal) * 100));
   
-  const updateCurrentActivity = (updatedSteps: number) => {
+  const updateCurrentActivity = async (updatedSteps: number) => {
+    if (!user) return;
+
     const todayDateString = getTodayDateString();
     const distance = +(updatedSteps * 0.0007).toFixed(1);
     const calories = Math.round(updatedSteps * 0.04);
     const duration = Math.round(updatedSteps * 0.01);
     
-    const updatedActivity = {
-      date: todayDateString,
-      steps: updatedSteps,
-      distance,
-      calories,
-      duration,
-    };
-    
-    // Find and update today's activity or add new one
-    const updatedActivities = [...activities];
-    const todayIndex = updatedActivities.findIndex(a => a.date === todayDateString);
-    
-    if (todayIndex >= 0) {
-      updatedActivities[todayIndex] = updatedActivity;
-    } else {
-      updatedActivities.push(updatedActivity);
+    try {
+      const { data, error } = await supabase
+        .from('activity_entries')
+        .upsert({
+          user_id: user.id,
+          date: todayDateString,
+          steps: updatedSteps,
+          distance,
+          calories,
+          duration
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating activity:', error);
+        return;
+      }
+
+      const updatedActivity: DailyActivity = {
+        date: data.date,
+        steps: data.steps,
+        distance: data.distance,
+        calories: data.calories,
+        duration: data.duration
+      };
+
+      setActivities(prev => [
+        updatedActivity,
+        ...prev.filter(a => a.date !== todayDateString)
+      ]);
+    } catch (error) {
+      console.error('Error updating activity:', error);
     }
-    
-    setActivities(updatedActivities);
-    localStorage.setItem("activityData", JSON.stringify(updatedActivities));
   };
 
-  const handleIncreaseSteps = () => {
+  const handleIncreaseSteps = async () => {
     const newStepsCount = Math.max(0, currentActivity.steps + 100);
-    updateCurrentActivity(newStepsCount);
+    await updateCurrentActivity(newStepsCount);
     toast({
       title: "Steps increased",
       description: `Added 100 steps. Total: ${newStepsCount.toLocaleString()}`,
     });
   };
 
-  const handleDecreaseSteps = () => {
+  const handleDecreaseSteps = async () => {
     const newStepsCount = Math.max(0, currentActivity.steps - 100);
-    updateCurrentActivity(newStepsCount);
+    await updateCurrentActivity(newStepsCount);
     toast({
       title: "Steps decreased",
       description: `Removed 100 steps. Total: ${newStepsCount.toLocaleString()}`,
     });
   };
   
-  const handleAddActivity = () => {
+  const handleAddActivity = async () => {
     if (!newSteps || isNaN(Number(newSteps))) {
       toast({
         title: "Invalid steps",
         description: "Please enter a valid number",
         variant: "destructive"
       });
-      return;
+      return false;
     }
     
     const steps = parseInt(newSteps);
@@ -154,7 +256,7 @@ export const useActivityData = () => {
     
     // Add to today's total
     const newTotalSteps = currentActivity.steps + steps;
-    updateCurrentActivity(newTotalSteps);
+    await updateCurrentActivity(newTotalSteps);
     
     setNewSteps("");
     
@@ -166,8 +268,8 @@ export const useActivityData = () => {
     return true;
   };
   
-  const handleUpdateGoal = () => {
-    if (!newStepsGoal || isNaN(Number(newStepsGoal))) {
+  const handleUpdateGoal = async () => {
+    if (!newStepsGoal || isNaN(Number(newStepsGoal)) || !user) {
       toast({
         title: "Invalid goal",
         description: "Please enter a valid number",
@@ -177,15 +279,37 @@ export const useActivityData = () => {
     }
     
     const goal = parseInt(newStepsGoal);
-    setStepsGoal(goal);
-    localStorage.setItem("stepsGoal", String(goal));
     
-    toast({
-      title: "Goal updated",
-      description: `Your daily steps goal is now ${goal.toLocaleString()} steps`,
-    });
-    
-    return true;
+    try {
+      const { error } = await supabase
+        .from('user_preferences')
+        .upsert({
+          user_id: user.id,
+          steps_goal: goal
+        });
+
+      if (error) {
+        console.error('Error updating steps goal:', error);
+        toast({
+          title: "Error",
+          description: "Failed to update goal",
+          variant: "destructive"
+        });
+        return false;
+      }
+
+      setStepsGoal(goal);
+      
+      toast({
+        title: "Goal updated",
+        description: `Your daily steps goal is now ${goal.toLocaleString()} steps`,
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Error updating steps goal:', error);
+      return false;
+    }
   };
   
   const getWeeklyActivities = () => {
@@ -283,6 +407,7 @@ export const useActivityData = () => {
     setSelectedActivityType,
     currentActivity,
     stepsProgress,
+    loading,
     handleAddActivity,
     handleUpdateGoal,
     handleIncreaseSteps,

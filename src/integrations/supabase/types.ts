@@ -24,6 +24,42 @@ export type Database = {
         }
         Relationships: []
       }
+      activity_entries: {
+        Row: {
+          calories: number
+          created_at: string
+          date: string
+          distance: number
+          duration: number
+          id: string
+          steps: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          calories?: number
+          created_at?: string
+          date: string
+          distance?: number
+          duration?: number
+          id?: string
+          steps?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          calories?: number
+          created_at?: string
+          date?: string
+          distance?: number
+          duration?: number
+          id?: string
+          steps?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -105,6 +141,99 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          sleep_goal: number
+          steps_goal: number
+          updated_at: string
+          user_height: number | null
+          user_id: string
+          water_goal: number
+          weight_goal: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          sleep_goal?: number
+          steps_goal?: number
+          updated_at?: string
+          user_height?: number | null
+          user_id: string
+          water_goal?: number
+          weight_goal?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          sleep_goal?: number
+          steps_goal?: number
+          updated_at?: string
+          user_height?: number | null
+          user_id?: string
+          water_goal?: number
+          weight_goal?: number | null
+        }
+        Relationships: []
+      }
+      water_entries: {
+        Row: {
+          created_at: string
+          daily_goal: number
+          date: string
+          entries: Json
+          id: string
+          total_intake: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          daily_goal?: number
+          date: string
+          entries?: Json
+          id?: string
+          total_intake?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          daily_goal?: number
+          date?: string
+          entries?: Json
+          id?: string
+          total_intake?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      weight_entries: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          user_id: string
+          weight: number
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          user_id: string
+          weight: number
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          user_id?: string
+          weight?: number
         }
         Relationships: []
       }
