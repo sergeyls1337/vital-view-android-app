@@ -1,7 +1,7 @@
 
 import { Card } from "@/components/ui/card";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { TrendingUp, TrendingDown, AlertCircle, CheckCircle } from "lucide-react";
+import { TrendingUp, TrendingDown, AlertCircle, CheckCircle, Award } from "lucide-react";
 
 interface SleepEntry {
   id: string;
@@ -14,9 +14,10 @@ interface SleepEntry {
 
 interface SleepInsightsCardProps {
   sleepEntries: SleepEntry[];
+  streak?: number;
 }
 
-const SleepInsightsCard = ({ sleepEntries }: SleepInsightsCardProps) => {
+const SleepInsightsCard = ({ sleepEntries, streak = 0 }: SleepInsightsCardProps) => {
   const { t } = useLanguage();
 
   const getLastWeekEntries = () => {
@@ -96,6 +97,20 @@ const SleepInsightsCard = ({ sleepEntries }: SleepInsightsCardProps) => {
             <span className="text-lg font-bold">{Math.round(consistencyScore)}%</span>
             <p className="text-xs text-gray-500">
               {consistencyScore >= 80 ? 'Excellent' : consistencyScore >= 60 ? 'Good' : 'Needs improvement'}
+            </p>
+          </div>
+        </div>
+
+        {/* Sleep Streak */}
+        <div className="flex items-center justify-between p-3 bg-white/60 rounded-lg">
+          <div className="flex items-center space-x-2">
+            <Award className={`h-4 w-4 ${streak >= 3 ? 'text-purple-500' : 'text-gray-400'}`} />
+            <span className="text-sm font-medium">Sleep Streak</span>
+          </div>
+          <div className="text-right">
+            <span className="text-lg font-bold">{streak} {streak === 1 ? 'day' : 'days'}</span>
+            <p className="text-xs text-gray-500">
+              {streak >= 5 ? 'Excellent' : streak >= 3 ? 'Good' : 'Keep going!'}
             </p>
           </div>
         </div>

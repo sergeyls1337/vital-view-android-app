@@ -10,7 +10,7 @@ import { useWeightGoal } from './useWeightGoal';
 export const useStatisticsData = () => {
   const { activities, getCurrentWeekStats, getAllTimeStats } = useActivityData();
   const waterData = useWaterData();
-  const { sleepEntries } = useSleepData();
+  const { sleepEntries, streak: sleepStreak } = useSleepData();
   const { weightEntries, getCurrentWeight } = useWeightData();
   const { goalWeight } = useWeightGoal();
 
@@ -107,7 +107,7 @@ export const useStatisticsData = () => {
   // Generate achievements
   const getAchievements = () => {
     const weeklySteps = weekStats.reduce((sum, day) => sum + day.steps, 0);
-    const consecutiveDays = Math.min(7, sleepEntries.filter(entry => entry.hours >= 7).length);
+    const consecutiveSleepDays = sleepStreak; // Use the streak from useSleepData
     const activeDaysThisWeek = weekStats.filter(day => day.steps > 0).length;
     
     return [
@@ -135,8 +135,8 @@ export const useStatisticsData = () => {
         description: 'Get 7+ hours of sleep for 5 consecutive days',
         icon: Moon,
         color: 'bg-purple-500',
-        earned: consecutiveDays >= 5,
-        progress: (consecutiveDays / 5) * 100
+        earned: consecutiveSleepDays >= 5,
+        progress: (consecutiveSleepDays / 5) * 100
       },
       {
         id: 'weight_goal',
@@ -181,6 +181,7 @@ export const useStatisticsData = () => {
       : 0,
     currentWeight: getCurrentWeight(),
     weightChange: getCurrentWeight() - (weightEntries.length > 0 ? weightEntries[0].weight : getCurrentWeight()),
-    allTimeStats
+    allTimeStats,
+    sleepStreak
   };
 };

@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,7 +16,7 @@ import { Moon, Sunrise, Clock, Calendar, Sparkles } from "lucide-react";
 
 const SleepPage = () => {
   const { t } = useLanguage();
-  const { sleepEntries, loading, saveSleepEntry } = useSleepData();
+  const { sleepEntries, loading, saveSleepEntry, streak } = useSleepData();
   const { sleepGoal, updateSleepGoal } = useSleepGoal();
   
   const [sleepHours, setSleepHours] = useState<number>(7.5);
@@ -127,7 +126,10 @@ const SleepPage = () => {
 
       {/* Sleep Insights */}
       {sleepEntries.length >= 3 && (
-        <SleepInsightsCard sleepEntries={sleepEntries} />
+        <SleepInsightsCard 
+          sleepEntries={sleepEntries} 
+          streak={streak}
+        />
       )}
       
       <Card className="p-5 mb-6 bg-gradient-to-br from-indigo-50 to-purple-50">
