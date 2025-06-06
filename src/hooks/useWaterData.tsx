@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,24 +31,31 @@ export const useWaterData = () => {
   });
   const [loading, setLoading] = useState(true);
 
+  // Helper function to get today's date string
   const getTodayDateString = () => {
     return new Date().toISOString().split('T')[0];
   };
 
+  // Helper function to safely parse water entries from Supabase JSON
   const parseWaterEntries = (entries: any): WaterEntry[] => {
     if (!entries || !Array.isArray(entries)) return [];
     
-    return entries.filter((entry: any) => 
-      entry && 
-      typeof entry === 'object' && 
-      'time' in entry && 
-      'amount' in entry &&
-      'date' in entry
-    ).map((entry: any) => ({
-      time: String(entry.time),
-      amount: Number(entry.amount),
-      date: String(entry.date)
-    }));
+    try {
+      return entries.filter((entry: any) => 
+        entry && 
+        typeof entry === 'object' && 
+        'time' in entry && 
+        'amount' in entry &&
+        'date' in entry
+      ).map((entry: any) => ({
+        time: String(entry.time),
+        amount: Number(entry.amount),
+        date: String(entry.date)
+      }));
+    } catch (error) {
+      console.error("Error parsing water entries:", error);
+      return [];
+    }
   };
 
   const loadWaterData = async () => {
@@ -59,6 +65,8 @@ export const useWaterData = () => {
     }
 
     try {
+      console.log("Loading water data for user:", user.id);
+      
       // Load user preferences for daily goal
       const { data: preferences } = await supabase
         .from('user_preferences')
@@ -67,6 +75,7 @@ export const useWaterData = () => {
         .single();
 
       const dailyGoal = preferences?.water_goal || 2000;
+      console.log("User water goal:", dailyGoal);
 
       // Load last 7 days of water entries
       const sevenDaysAgo = new Date();
@@ -85,6 +94,8 @@ export const useWaterData = () => {
         return;
       }
 
+      console.log("Loaded water entries:", entries);
+      
       // Generate weekly data
       const weeklyData = generateWeeklyData(entries || []);
       
@@ -95,6 +106,9 @@ export const useWaterData = () => {
       const currentIntake = todayEntry?.total_intake || 0;
       // Parse the entries JSON field safely using the helper function
       const todayEntries = parseWaterEntries(todayEntry?.entries);
+      
+      console.log("Today's water intake:", currentIntake);
+      console.log("Today's water entries:", todayEntries);
 
       setWaterData({
         currentIntake,
@@ -159,6 +173,17 @@ export const useWaterData = () => {
 
   useEffect(() => {
     loadWaterData();
+    
+    // Listen for user preference updates
+    const handleUserPrefsUpdate = () => {
+      loadWaterData();
+    };
+    
+    window.addEventListener('user-preferences-updated', handleUserPrefsUpdate);
+    
+    return () => {
+      window.removeEventListener('user-preferences-updated', handleUserPrefsUpdate);
+    };
   }, [user]);
 
   const addWaterIntake = async (amount: number) => {
@@ -215,20 +240,36 @@ export const useWaterData = () => {
       // Convert WaterEntry[] to a JSON-compatible format that Supabase can handle
       const entriesForSupabase = JSON.parse(JSON.stringify(newEntries)) as Json;
       
-      const { error } = await supabase
+      console.log("Saving water intake:", {
+        user_id: user.id,
+        date: todayDateString, 
+        total_intake: newIntake,
+        daily_goal: waterData.dailyGoal,
+        entries: entriesForSupabase
+      });
+      
+      const { data, error } = await supabase
         .from('water_entries')
         .upsert({
           user_id: user.id,
           date: todayDateString,
           total_intake: newIntake,
           daily_goal: waterData.dailyGoal,
-          entries: entriesForSupabase // Now properly cast to Json type
-        });
+          entries: entriesForSupabase
+        })
+        .select();
 
       if (error) {
         console.error('Error saving water intake:', error);
+        toast({
+          title: "Error",
+          description: "Failed to save water intake",
+          variant: "destructive"
+        });
         return;
       }
+
+      console.log("Water intake saved successfully:", data);
 
       // Update local state
       const today = new Date().getDay();
@@ -248,6 +289,11 @@ export const useWaterData = () => {
       });
     } catch (error) {
       console.error('Error saving water intake:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save water intake",
+        variant: "destructive"
+      });
     }
   };
 
@@ -260,6 +306,7 @@ export const useWaterData = () => {
     ...waterData,
     loading,
     addWaterIntake,
-    getTodayEntries
+    getTodayEntries,
+    loadWaterData  // Export this so it can be called from elsewhere if needed
   };
 };

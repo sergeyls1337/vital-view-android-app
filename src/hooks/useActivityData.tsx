@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { DailyActivity, ActivityType } from "@/types/activity";
 import { toast } from "@/hooks/use-toast";
@@ -32,6 +31,7 @@ export const useActivityData = () => {
     if (!user) return;
     
     try {
+      console.log("Loading user preferences for user:", user.id);
       const { data, error } = await supabase
         .from('user_preferences')
         .select('*')
@@ -44,13 +44,15 @@ export const useActivityData = () => {
       }
 
       if (data) {
+        console.log("Loaded user preferences:", data);
         setStepsGoal(data.steps_goal);
         setNewStepsGoal(data.steps_goal.toString());
       } else {
+        console.log("Creating default preferences for new user");
         // Create default preferences for new user
         await supabase
           .from('user_preferences')
-          .insert({
+          .upsert({
             user_id: user.id,
             steps_goal: 10000,
             water_goal: 2000,
@@ -70,6 +72,7 @@ export const useActivityData = () => {
     }
 
     try {
+      console.log("Loading activities for user:", user.id);
       const { data, error } = await supabase
         .from('activity_entries')
         .select('*')
@@ -82,6 +85,7 @@ export const useActivityData = () => {
         return;
       }
 
+      console.log("Loaded activities:", data);
       const formattedActivities: DailyActivity[] = data.map(entry => ({
         date: entry.date,
         steps: entry.steps,
@@ -165,7 +169,7 @@ export const useActivityData = () => {
   const stepsProgress = Math.min(100, Math.round((currentActivity.steps / stepsGoal) * 100));
   
   const updateCurrentActivity = async (updatedSteps: number) => {
-    if (!user) return;
+    if (!user) return false;
 
     const todayDateString = getTodayDateString();
     const distance = +(updatedSteps * 0.0007).toFixed(1);
@@ -173,6 +177,15 @@ export const useActivityData = () => {
     const duration = Math.round(updatedSteps * 0.01);
     
     try {
+      console.log("Updating activity entry:", {
+        user_id: user.id,
+        date: todayDateString,
+        steps: updatedSteps,
+        distance,
+        calories,
+        duration
+      });
+      
       const { data, error } = await supabase
         .from('activity_entries')
         .upsert({
@@ -188,9 +201,10 @@ export const useActivityData = () => {
 
       if (error) {
         console.error('Error updating activity:', error);
-        return;
+        return false;
       }
 
+      console.log("Activity updated successfully:", data);
       const updatedActivity: DailyActivity = {
         date: data.date,
         steps: data.steps,
@@ -203,8 +217,11 @@ export const useActivityData = () => {
         updatedActivity,
         ...prev.filter(a => a.date !== todayDateString)
       ]);
+      
+      return true;
     } catch (error) {
       console.error('Error updating activity:', error);
+      return false;
     }
   };
 
@@ -256,16 +273,26 @@ export const useActivityData = () => {
     
     // Add to today's total
     const newTotalSteps = currentActivity.steps + steps;
-    await updateCurrentActivity(newTotalSteps);
+    console.log("Adding activity, new total steps:", newTotalSteps);
+    const success = await updateCurrentActivity(newTotalSteps);
     
-    setNewSteps("");
-    
-    toast({
-      title: "Activity added",
-      description: `Added ${steps} steps from ${selectedActivityType} to today's total`,
-    });
-    
-    return true;
+    if (success) {
+      setNewSteps("");
+      
+      toast({
+        title: "Activity added",
+        description: `Added ${steps} steps from ${selectedActivityType} to today's total`,
+      });
+      
+      return true;
+    } else {
+      toast({
+        title: "Error adding steps",
+        description: "Failed to update activity data",
+        variant: "destructive"
+      });
+      return false;
+    }
   };
   
   const handleUpdateGoal = async () => {

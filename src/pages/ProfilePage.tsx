@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { userService } from "@/services/userService";
@@ -9,15 +8,17 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import PageHeader from "@/components/PageHeader";
 import BottomNavigation from "@/components/BottomNavigation";
-import { User, Settings, LogOut, RotateCcw } from "lucide-react";
+import { User, Settings, LogOut, RotateCcw, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { dataService } from "@/services/dataService";
+import { supabase } from "@/integrations/supabase/client";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [profileUser, setProfileUser] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -37,6 +38,7 @@ const ProfilePage = () => {
         if (!currentUser) {
           navigate("/auth");
         } else {
+          console.log("Loaded user data:", currentUser);
           setProfileUser(currentUser);
           setName(currentUser.name || "");
           setEmail(currentUser.email || "");
@@ -51,6 +53,7 @@ const ProfilePage = () => {
         }
       } catch (error) {
         console.error("Error loading user data:", error);
+        toast.error("Failed to load user profile");
         navigate("/auth");
       }
     };
@@ -59,7 +62,24 @@ const ProfilePage = () => {
   }, [navigate]);
 
   const handleSaveProfile = async () => {
+    if (!user) return;
+    
+    setIsSaving(true);
+    
     try {
+      console.log("Saving profile with data:", {
+        name,
+        email,
+        height: height ? parseFloat(height) : undefined,
+        weight: weight ? parseFloat(weight) : undefined,
+        age: age ? parseInt(age) : undefined,
+        gender,
+        goalWeight: goalWeight ? parseFloat(goalWeight) : undefined,
+        goalSleep: goalSleep ? parseFloat(goalSleep) : undefined,
+        goalSteps: goalSteps ? parseInt(goalSteps) : undefined,
+        goalWater: goalWater ? parseFloat(goalWater) : undefined,
+      });
+      
       const updatedUser = await userService.updateProfile({
         name,
         email,
@@ -73,11 +93,31 @@ const ProfilePage = () => {
         goalWater: goalWater ? parseFloat(goalWater) : undefined,
       });
       
+      // Update user preferences in Supabase directly as a backup
+      if (user) {
+        await supabase
+          .from('user_preferences')
+          .upsert({
+            user_id: user.id,
+            steps_goal: goalSteps ? parseInt(goalSteps) : 10000,
+            water_goal: goalWater ? parseFloat(goalWater) * 1000 : 2000, // Convert from L to ml
+            sleep_goal: goalSleep ? parseFloat(goalSleep) : 8.0,
+            weight_goal: goalWeight ? parseFloat(goalWeight) : null
+          });
+      }
+      
       setProfileUser(updatedUser);
       setIsEditing(false);
       toast.success("Profile updated successfully!");
+      
+      // Force reload user data in other components
+      window.dispatchEvent(new CustomEvent('user-preferences-updated'));
+      
     } catch (error) {
-      toast.error("Failed to update profile");
+      console.error("Error updating profile:", error);
+      toast.error("Failed to update profile. Please try again.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -245,14 +285,23 @@ const ProfilePage = () => {
                 className="flex-1" 
                 variant="outline" 
                 onClick={() => setIsEditing(false)}
+                disabled={isSaving}
               >
                 Cancel
               </Button>
               <Button 
                 className="flex-1 bg-health-purple hover:bg-purple-600" 
                 onClick={handleSaveProfile}
+                disabled={isSaving}
               >
-                Save Changes
+                {isSaving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  'Save Changes'
+                )}
               </Button>
             </div>
           </div>
