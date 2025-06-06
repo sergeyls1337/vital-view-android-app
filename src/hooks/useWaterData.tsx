@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -248,16 +249,44 @@ export const useWaterData = () => {
         entries: entriesForSupabase
       });
       
-      const { data, error } = await supabase
+      // First check if entry exists for today
+      const { data: existingEntry } = await supabase
         .from('water_entries')
-        .upsert({
-          user_id: user.id,
-          date: todayDateString,
-          total_intake: newIntake,
-          daily_goal: waterData.dailyGoal,
-          entries: entriesForSupabase
-        })
-        .select();
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('date', todayDateString)
+        .single();
+      
+      let result;
+      
+      if (existingEntry) {
+        // Update existing entry
+        result = await supabase
+          .from('water_entries')
+          .update({
+            total_intake: newIntake,
+            daily_goal: waterData.dailyGoal,
+            entries: entriesForSupabase,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id)
+          .eq('date', todayDateString)
+          .select();
+      } else {
+        // Insert new entry
+        result = await supabase
+          .from('water_entries')
+          .insert({
+            user_id: user.id,
+            date: todayDateString,
+            total_intake: newIntake,
+            daily_goal: waterData.dailyGoal,
+            entries: entriesForSupabase
+          })
+          .select();
+      }
+      
+      const { data, error } = result;
 
       if (error) {
         console.error('Error saving water intake:', error);

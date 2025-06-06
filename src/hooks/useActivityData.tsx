@@ -186,18 +186,46 @@ export const useActivityData = () => {
         duration
       });
       
-      const { data, error } = await supabase
+      // Check if today's entry exists
+      const { data: existingEntry } = await supabase
         .from('activity_entries')
-        .upsert({
-          user_id: user.id,
-          date: todayDateString,
-          steps: updatedSteps,
-          distance,
-          calories,
-          duration
-        })
-        .select()
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('date', todayDateString)
         .single();
+      
+      let result;
+      
+      if (existingEntry) {
+        // Update existing entry
+        result = await supabase
+          .from('activity_entries')
+          .update({
+            steps: updatedSteps,
+            distance,
+            calories,
+            duration,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id)
+          .eq('date', todayDateString)
+          .select();
+      } else {
+        // Insert new entry
+        result = await supabase
+          .from('activity_entries')
+          .insert({
+            user_id: user.id,
+            date: todayDateString,
+            steps: updatedSteps,
+            distance,
+            calories,
+            duration
+          })
+          .select();
+      }
+
+      const { data, error } = result;
 
       if (error) {
         console.error('Error updating activity:', error);
@@ -206,11 +234,11 @@ export const useActivityData = () => {
 
       console.log("Activity updated successfully:", data);
       const updatedActivity: DailyActivity = {
-        date: data.date,
-        steps: data.steps,
-        distance: data.distance,
-        calories: data.calories,
-        duration: data.duration
+        date: data[0].date,
+        steps: data[0].steps,
+        distance: data[0].distance,
+        calories: data[0].calories,
+        duration: data[0].duration
       };
 
       setActivities(prev => [
