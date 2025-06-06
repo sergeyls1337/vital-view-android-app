@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { Json } from "@/integrations/supabase/types";
 
 interface WaterEntry {
   time: string;
@@ -211,6 +212,9 @@ export const useWaterData = () => {
     try {
       const todayDateString = getTodayDateString();
       
+      // Convert WaterEntry[] to a JSON-compatible format that Supabase can handle
+      const entriesForSupabase = JSON.parse(JSON.stringify(newEntries)) as Json;
+      
       const { error } = await supabase
         .from('water_entries')
         .upsert({
@@ -218,7 +222,7 @@ export const useWaterData = () => {
           date: todayDateString,
           total_intake: newIntake,
           daily_goal: waterData.dailyGoal,
-          entries: newEntries // TypeScript will correctly handle this as Supabase expects Json
+          entries: entriesForSupabase // Now properly cast to Json type
         });
 
       if (error) {
