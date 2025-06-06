@@ -76,7 +76,10 @@ export const useWaterData = () => {
       const todayEntry = entries?.find(e => e.date === todayDateString);
       
       const currentIntake = todayEntry?.total_intake || 0;
-      const todayEntries = todayEntry?.entries || [];
+      // Parse the entries JSON field safely
+      const todayEntries: WaterEntry[] = todayEntry?.entries 
+        ? (Array.isArray(todayEntry.entries) ? todayEntry.entries as WaterEntry[] : [])
+        : [];
 
       setWaterData({
         currentIntake,
@@ -201,7 +204,7 @@ export const useWaterData = () => {
           date: todayDateString,
           total_intake: newIntake,
           daily_goal: waterData.dailyGoal,
-          entries: newEntries
+          entries: newEntries as any // Type cast to satisfy Supabase Json type
         });
 
       if (error) {
