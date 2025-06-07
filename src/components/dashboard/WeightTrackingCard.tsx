@@ -14,8 +14,8 @@ const WeightTrackingCard = ({ currentWeight, goalWeight }: WeightTrackingCardPro
   const navigate = useNavigate();
   const { t } = useLanguage();
 
-  const weightDifference = Math.abs(currentWeight - goalWeight);
-  const isAtGoal = weightDifference <= 1;
+  const weightDifference = currentWeight - goalWeight;
+  const isAtGoal = Math.abs(weightDifference) <= 1;
   const isAboveGoal = currentWeight > goalWeight;
 
   const getTrendIcon = () => {
@@ -26,7 +26,10 @@ const WeightTrackingCard = ({ currentWeight, goalWeight }: WeightTrackingCardPro
 
   const getProgressPercentage = () => {
     if (isAtGoal) return 100;
-    const progress = Math.max(0, 100 - (weightDifference / goalWeight) * 100);
+    // Calculate progress based on how close we are to the goal
+    // If we're above goal, progress is based on how much we need to lose
+    // If we're below goal, progress is based on how much we need to gain
+    const progress = Math.max(0, 100 - (Math.abs(weightDifference) / goalWeight) * 100);
     return Math.round(progress);
   };
 
@@ -45,7 +48,7 @@ const WeightTrackingCard = ({ currentWeight, goalWeight }: WeightTrackingCardPro
             <div className="flex items-center gap-1 mt-2">
               <div className={`w-2 h-2 rounded-full ${isAboveGoal ? 'bg-orange-500' : 'bg-blue-500'}`}></div>
               <p className={`text-xs ${isAboveGoal ? 'text-orange-600' : 'text-blue-600'}`}>
-                {isAboveGoal ? '-' : '+'}{weightDifference.toFixed(1)}kg to goal
+                {Math.abs(weightDifference).toFixed(1)}kg {isAboveGoal ? 'above' : 'to'} goal
               </p>
             </div>
           )}
