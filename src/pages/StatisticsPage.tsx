@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -243,7 +242,6 @@ const StatisticsPage = () => {
                     fill="#8884d8"
                     dataKey="value"
                     label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    labelStyle={{ fontSize: '10px' }}
                   >
                     {activityDistribution.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
