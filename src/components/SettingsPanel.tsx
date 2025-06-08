@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -54,14 +53,13 @@ const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
                 <Palette className="h-5 w-5 mr-2 text-health-purple" />
                 <Label className="text-base font-medium">{t('settings.theme')}</Label>
               </div>
-              <Select value={theme} onValueChange={(value: 'light' | 'dark' | 'system') => setTheme(value)}>
+              <Select value={theme} onValueChange={(value: 'light' | 'dark') => setTheme(value)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="light">{t('settings.light')}</SelectItem>
                   <SelectItem value="dark">{t('settings.dark')}</SelectItem>
-                  <SelectItem value="system">{t('settings.system')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
